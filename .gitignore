@@ -54,4 +54,4 @@ data
 docs
 assets
 
-package-lock.json
+# package-lock.json  # 保留以支持 npm ci
