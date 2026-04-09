@@ -4,6 +4,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { listTables, describeTable, listDatabases } from './db/executor.js';
+import { getPool, isReadOnly } from './db/connection.js';
 
 /**
  * 注册 MCP Resources
@@ -100,6 +101,45 @@ export function registerResources(server: McpServer): void {
           },
         ],
       };
+    }
+  );
+
+  server.resource(
+    'pool-status',
+    'mysql://status/pool',
+    { description: '连接池状态：活跃连接、空闲连接、等待队列' },
+    async () => {
+      try {
+        const pool = getPool();
+        const p = pool.pool as any;
+        const status = {
+          activeConnections: p._allConnections?.length ?? 0,
+          idleConnections: p._freeConnections?.length ?? 0,
+          waitingRequests: p._connectionQueue?.length ?? 0,
+          connectionLimit: p.config?.connectionLimit ?? 0,
+          readonlyMode: isReadOnly(),
+          database: process.env.MYSQL_DATABASE || '(未指定)',
+        };
+        return {
+          contents: [
+            {
+              uri: 'mysql://status/pool',
+              mimeType: 'application/json',
+              text: JSON.stringify(status),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          contents: [
+            {
+              uri: 'mysql://status/pool',
+              mimeType: 'text/plain',
+              text: `无法获取连接池状态：${error instanceof Error ? error.message : '未知错误'}`,
+            },
+          ],
+        };
+      }
     }
   );
 

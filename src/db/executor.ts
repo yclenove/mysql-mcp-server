@@ -4,6 +4,7 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { getPool, getConnection } from './connection.js';
 import { QueryResult, BatchResult, ExecutionMode } from '../types/index.js';
+import { auditLog } from '../audit.js';
 
 const IDENTIFIER_REGEX = /^[A-Za-z0-9_]+$/;
 const RETRIABLE_ERROR_CODES = new Set([
@@ -176,6 +177,7 @@ export async function executeQuery(
     const executionTime = Date.now() - startTime;
 
     if (Array.isArray(result)) {
+      auditLog({ sql, params, success: true, executionTime });
       return {
         success: true,
         data: (result as RowDataPacket[]).slice(0, effectiveMaxRows),
@@ -185,6 +187,7 @@ export async function executeQuery(
       };
     } else {
       const header = result as ResultSetHeader;
+      auditLog({ sql, params, success: true, executionTime, affectedRows: header.affectedRows });
       return {
         success: true,
         affectedRows: header.affectedRows,
@@ -196,9 +199,11 @@ export async function executeQuery(
     }
   } catch (error) {
     const executionTime = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : '未知错误';
+    auditLog({ sql, params, success: false, error: errorMsg, executionTime });
     return {
       success: false,
-      error: error instanceof Error ? error.message : '未知错误',
+      error: errorMsg,
       executionTime,
     };
   }

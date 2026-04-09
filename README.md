@@ -10,13 +10,15 @@
 
 ## 特性
 
-- **12 个精简工具** — 查询、增删改、批量操作、元数据、性能分析一应俱全
+- **13 个工具 + 4 个 Prompts** — 查询、增删改、DDL、批量、元数据、性能分析一应俱全
 - **参数化查询** — 防止 SQL 注入攻击
 - **安全防护** — DELETE/UPDATE 必须带 WHERE，TRUNCATE/DROP/ALTER 自动拦截
 - **只读模式** — 一键开启，适合生产环境
 - **事务保护** — 批量操作自动事务，失败即回滚
-- **上下文友好** — 紧凑 JSON 输出，节省 LLM token 消耗
-- **MCP Resources** — 自动发现数据库 schema，减少手动查询
+- **上下文友好** — 紧凑 JSON 输出，内置分页，节省 LLM token 消耗
+- **MCP Resources** — 自动发现数据库 schema 和连接池状态
+- **MCP Prompts** — 预置 Prompts 引导 LLM 分析表结构、生成查询、优化性能
+- **审计日志** — 可选记录所有 SQL 执行到文件
 - **容器化支持** — 内置 Dockerfile，一行命令部署
 - **查询超时与重试** — 可配置超时时间和自动重试策略
 - **SSL 支持** — 安全连接到远程数据库
@@ -30,15 +32,18 @@ MCP Client (Claude/Cursor)
 MCP Server (server.ts)
     ├── Query Tools ──────── query, explain_query
     ├── Modify Tools ─────── insert, update, delete
+    ├── DDL Tools ─────────── create_table
     ├── Batch Tools ──────── batch_execute, batch_insert
     ├── Schema Tools ─────── show_databases, list_tables,
     │                         describe_table, show_indexes,
     │                         show_create_table
-    └── Resources ─────────── schema/overview, schema/table/{name},
-                               databases
+    ├── Resources ─────────── schema/overview, schema/table/{name},
+    │                          databases, status/pool
+    └── Prompts ──────────── analyze-table, generate-query,
+                               optimize-query, data-overview
     │
     ▼
-SQL Executor (executor.ts) ← 超时/重试/安全检查
+SQL Executor (executor.ts) ← 超时/重试/安全检查/审计日志
     │
     ▼
 Connection Pool (connection.ts) ← mysql2 连接池
@@ -78,11 +83,12 @@ npm start
 
 | 工具 | 说明 | 参数 |
 |------|------|------|
-| `query` | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN） | `sql`, `params?`, `limit?` |
+| `query` | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN） | `sql`, `params?`, `limit?`, `page?`, `pageSize?` |
 | `explain_query` | 分析 SQL 查询执行计划 | `sql` |
 | `insert` | 执行 INSERT | `sql`, `params?` |
 | `update` | 执行 UPDATE（必须含 WHERE） | `sql`, `params?` |
 | `delete` | 执行 DELETE（必须含 WHERE） | `sql`, `params?` |
+| `create_table` | 创建新表（只读模式下禁用） | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
 | `batch_execute` | 批量执行 SQL（自动事务），最多 50 条 | `statements[]` |
 | `batch_insert` | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]` |
 | `show_databases` | 列出所有数据库 | 无 |
@@ -98,6 +104,16 @@ npm start
 | `mysql://schema/overview` | 当前数据库所有表及其字段结构概览 |
 | `mysql://schema/table/{tableName}` | 指定表的详细字段结构 |
 | `mysql://databases` | 所有数据库列表 |
+| `mysql://status/pool` | 连接池状态（活跃/空闲连接、等待队列） |
+
+### MCP Prompts
+
+| Prompt | 说明 | 参数 |
+|--------|------|------|
+| `analyze-table` | 分析表结构、索引，给出优化建议 | `table` |
+| `generate-query` | 根据自然语言描述生成 SQL 查询 | `description`, `tables?` |
+| `optimize-query` | 分析并优化 SQL 查询性能 | `sql` |
+| `data-overview` | 快速概览数据库内容和表关系 | 无 |
 
 ## 安全特性
 
@@ -148,6 +164,7 @@ npm start
 | `MYSQL_SSL_CERT` | - | SSL 客户端证书路径 |
 | `MYSQL_SSL_KEY` | - | SSL 客户端密钥路径 |
 | `MCP_DEBUG` | false | 开启调试信息（返回 executionTime） |
+| `MCP_AUDIT_LOG` | - | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
 
 ### MCP 客户端配置
 
@@ -204,8 +221,10 @@ npm start
 ```
 src/
 ├── index.ts           # 入口，.env 加载与启动
-├── server.ts          # MCP Server 创建与工具注册
-├── resources.ts       # MCP Resources（schema 自动发现）
+├── server.ts          # MCP Server 创建与注册
+├── resources.ts       # MCP Resources（schema/连接池）
+├── prompts.ts         # MCP Prompts（预置引导）
+├── audit.ts           # 查询审计日志
 ├── db/
 │   ├── connection.ts  # 连接池管理、配置读取
 │   └── executor.ts    # SQL 执行器、安全检查、超时重试
@@ -213,6 +232,7 @@ src/
 │   ├── query.ts       # 查询工具 (query, explain_query)
 │   ├── modify.ts      # 修改工具 (insert/update/delete)
 │   ├── batch.ts       # 批量工具 (batch_execute/batch_insert)
+│   ├── ddl.ts         # DDL 工具 (create_table)
 │   └── schema.ts      # 元数据工具
 └── types/
     └── index.ts       # TypeScript 类型定义

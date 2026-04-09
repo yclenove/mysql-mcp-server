@@ -31,6 +31,11 @@
 - 新增 MCP Resources：`mysql://schema/overview`（schema 概览）、`mysql://schema/table/{name}`（表结构）、`mysql://databases`（数据库列表）
 - 新增 Dockerfile 和 .dockerignore，支持容器化部署
 - 新增单元测试（30 个用例覆盖 executor 安全检查、标识符校验等）
+- 新增 4 个 MCP Prompts：`analyze-table`（分析表结构）、`generate-query`（生成查询）、`optimize-query`（优化查询）、`data-overview`（数据库概览）
+- 新增 `create_table` DDL 工具，受控建表（只读模式下禁用）
+- `query` 工具新增 `page`/`pageSize` 分页参数，自动生成 LIMIT/OFFSET
+- 新增查询审计日志功能，通过 `MCP_AUDIT_LOG` 环境变量指定日志文件路径
+- 新增连接池状态监控 Resource：`mysql://status/pool`
 
 ### 优化
 

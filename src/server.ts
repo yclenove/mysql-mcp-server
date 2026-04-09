@@ -6,7 +6,9 @@ import { registerQueryTools } from './tools/query.js';
 import { registerModifyTools } from './tools/modify.js';
 import { registerSchemaTools } from './tools/schema.js';
 import { registerBatchTools } from './tools/batch.js';
+import { registerDDLTools } from './tools/ddl.js';
 import { registerResources } from './resources.js';
+import { registerPrompts } from './prompts.js';
 import packageJson from '../package.json' with { type: 'json' };
 
 /**
@@ -22,7 +24,9 @@ export function createServer(): McpServer {
   registerModifyTools(server);
   registerSchemaTools(server);
   registerBatchTools(server);
+  registerDDLTools(server);
   registerResources(server);
+  registerPrompts(server);
 
   return server;
 }
@@ -46,6 +50,9 @@ MySQL MCP Server 提供的工具列表：
 【批量操作】
 - batch_execute: 批量执行 SQL（自动事务，失败回滚）
 - batch_insert: 批量插入记录
+
+【DDL】
+- create_table: 创建新表（只读模式下禁用）
 
 【元数据】
 - show_databases: 列出所有数据库

@@ -41,8 +41,16 @@ export function registerQueryTools(server: McpServer): void {
         .max(10000)
         .optional()
         .describe('限制返回行数，覆盖服务器默认值'),
+      page: z.number().int().min(1).optional().describe('页码（从 1 开始），需配合 pageSize 使用'),
+      pageSize: z
+        .number()
+        .int()
+        .min(1)
+        .max(1000)
+        .optional()
+        .describe('每页行数（默认 20），需配合 page 使用'),
     },
-    async ({ sql, params = [], limit }) => {
+    async ({ sql, params = [], limit, page, pageSize }) => {
       if (!isReadOnlyQuery(sql)) {
         return {
           content: [{ type: 'text', text: '错误：此工具只允许执行 SELECT/SHOW/DESCRIBE 查询' }],
@@ -50,7 +58,16 @@ export function registerQueryTools(server: McpServer): void {
         };
       }
 
-      const result = await executeQuery(sql, params, ExecutionMode.READONLY, limit);
+      let finalSql = sql;
+      const finalParams = [...(params || [])];
+
+      if (page !== undefined) {
+        const size = pageSize ?? 20;
+        const offset = (page - 1) * size;
+        finalSql = `${sql.replace(/;\s*$/, '')} LIMIT ${size} OFFSET ${offset}`;
+      }
+
+      const result = await executeQuery(finalSql, finalParams, ExecutionMode.READONLY, limit);
 
       if (!result.success) {
         return {
