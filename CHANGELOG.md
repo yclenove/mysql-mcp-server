@@ -12,7 +12,7 @@
 
 ### 文档
 
-- README / README_en：补充 Cursor 下通过 `.cursor/mcp.json` 配置的步骤
+- README / README_en：补充 Cursor 下通过 `.cursor/mcp.json` 配置的步骤；说明项目根目录 `.env` 加载方式；新增 [`.env.example`](./.env.example) 模板
 
 ### 修复
 

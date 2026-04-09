@@ -163,6 +163,8 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 
 ## 配置
 
+可在**项目根目录**创建 `.env`（可复制 [`.env.example`](./.env.example)），启动时会自动加载；**勿将 `.env` 提交到 Git**。若本机已设置同名 `MYSQL_*` 环境变量，则优先使用环境变量（dotenv 默认不覆盖已有值）。
+
 ### 环境变量
 
 | 变量                     | 默认值    | 说明                                                 |
@@ -212,7 +214,7 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 
 #### Cursor
 
-1. **推荐（本仓库已提供）**：将 [`mcp.json`](./.cursor/mcp.json) 置于项目根目录 `.cursor/mcp.json`（或复制到你的用户目录 `~/.cursor/mcp.json`）。其中使用全局安装的 `mysql-mcp-server`；**密码**通过系统环境变量 `MYSQL_PASSWORD` 注入（可选 `MYSQL_DATABASE`），勿把明文密码提交到 Git。
+1. **推荐（本仓库已提供）**：将 [`mcp.json`](./.cursor/mcp.json) 置于项目根目录 `.cursor/mcp.json`（或复制到你的用户目录 `~/.cursor/mcp.json`）。其中使用全局安装的 `mysql-mcp-server`；连接信息放在**项目根目录**的 `.env`（见上「配置」），勿把 `.env` 提交到 Git。
 2. **等价方式**：在 Cursor **Settings → Tools & MCP** 中添加服务器，命令为 `npx -y @yclenove/mysql-mcp-server`，并配置相同的环境变量。
 
 #### 生产环境（只读模式）

@@ -163,6 +163,8 @@ Set `MYSQL_READONLY=true` for three-layer protection:
 
 ## Configuration
 
+Create a `.env` file in the **project root** (copy from [`.env.example`](./.env.example)); it is loaded on startup. **Do not commit `.env`.** If `MYSQL_*` variables are already set in your shell or OS, those take precedence (dotenv does not override existing values by default).
+
 ### Environment Variables
 
 | Variable                 | Default   | Description                                                   |
@@ -212,7 +214,7 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 #### Cursor
 
-1. **Recommended (this repo includes a template)**: Use [`.cursor/mcp.json`](./.cursor/mcp.json) at the project root (or copy it to `~/.cursor/mcp.json`). It expects a globally installed `mysql-mcp-server`; set **`MYSQL_PASSWORD`** (and optionally **`MYSQL_DATABASE`**) via environment variables—do not commit secrets.
+1. **Recommended (this repo includes a template)**: Use [`.cursor/mcp.json`](./.cursor/mcp.json) at the project root (or copy it to `~/.cursor/mcp.json`). It expects a globally installed `mysql-mcp-server`; put connection settings in a **project root** `.env` (see **Configuration** above)—do not commit secrets.
 2. **Alternative**: In **Settings → Tools & MCP**, add a server with command `npx -y @yclenove/mysql-mcp-server` and the same environment variables.
 
 #### Production (Read-Only Mode)
