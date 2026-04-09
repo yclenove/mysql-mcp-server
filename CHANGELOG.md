@@ -13,6 +13,7 @@
 ### 文档
 
 - README / README_en：补充 Cursor 下通过 `.cursor/mcp.json` 配置的步骤；说明项目根目录 `.env` 加载方式；新增 [`.env.example`](./.env.example) 模板
+- [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)：在 Cursor 对话中逐项验证 MCP（工具 / Resources / Prompts）的手动清单与总控提示词
 
 ### 修复
 

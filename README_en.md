@@ -216,6 +216,7 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 1. **Recommended (this repo includes a template)**: Use [`.cursor/mcp.json`](./.cursor/mcp.json) at the project root (or copy it to `~/.cursor/mcp.json`). It expects a globally installed `mysql-mcp-server`; put connection settings in a **project root** `.env` (see **Configuration** above)—do not commit secrets.
 2. **Alternative**: In **Settings → Tools & MCP**, add a server with command `npx -y @yclenove/mysql-mcp-server` and the same environment variables.
+3. **Manual MCP verification in Cursor**: See [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md) (checklist for tools, resources, and prompts).
 
 #### Production (Read-Only Mode)
 
