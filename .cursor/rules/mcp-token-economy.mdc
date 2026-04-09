@@ -1,6 +1,6 @@
 ---
 description: 修改 MCP 工具/资源/Prompts 时须兼顾 LLM token 消耗
-globs: src/server.ts,src/resources.ts,src/prompts.ts,src/tools/**/*.ts
+globs: src/server.ts,src/resources.ts,src/schemaOverviewLimit.ts,src/prompts.ts,src/tools/**/*.ts
 alwaysApply: false
 ---
 
