@@ -4,6 +4,16 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.2] - 2026-04-09
+
+### 修复
+
+- 项目根目录存在 `.env` 时，使用 dotenv `override: true`，使 `.env` 中定义的变量优先于系统/用户环境中已存在的 `MYSQL_*` 等，避免 Cursor 或终端误连本机
+
+### 变更
+
+- README：Cursor 分步说明、`.cursor/mcp.json` 示例、故障排查「`.env` 已加载但地址不对」；配置说明中与环境优先级相关的表述与 v1.4.2 行为一致
+
 ## [1.4.1] - 2026-04-09
 
 ### 变更

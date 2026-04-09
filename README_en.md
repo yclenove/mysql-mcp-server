@@ -181,7 +181,7 @@ Manual checklist: [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md).
 
 ## Configuration
 
-Create `.env` in the **project root** (copy [`.env.example`](./.env.example)); **do not commit `.env`**. Existing shell variables usually take precedence (dotenv does not override by default).
+Create `.env` in the **project root** (copy [`.env.example`](./.env.example)); **do not commit `.env`**. Since **v1.4.2**, if that file exists, keys defined in it **override** inherited process/env vars (including system `MYSQL_*`). If no project `.env` is found, only the environment and defaults apply.
 
 ### Connection
 
@@ -271,9 +271,26 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 ### Cursor
 
-1. Put MCP config in project `.cursor/mcp.json` or user `~/.cursor/mcp.json`.
-2. Put connection settings in project root `.env` (do not commit secrets).
-3. Full manual test: [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md).
+1. **Open this repo as the workspace root** (so `${workspaceFolder}` contains `dist/` and `.env`).
+2. Run `npm install` and `npm run build` to produce `dist/index.js`.
+3. Put connection settings in **project root** `.env` (gitignored). **Do not** put passwords in `.cursor/mcp.json` `env`; use `"env": {}`.
+4. This repo includes [`.cursor/mcp.json`](./.cursor/mcp.json) with `node` + `${workspaceFolder}/dist/index.js`. Enable the `mysql-mcp` server under **Settings → MCP** or reload the window.
+5. **Env precedence (v1.4.2+)**: keys present in project `.env` override same-named variables from the OS, so you do not accidentally connect to `127.0.0.1`.
+6. Full manual test: [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md).
+
+```json
+{
+  "mcpServers": {
+    "mysql-mcp": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {}
+    }
+  }
+}
+```
+
+To use a **globally installed** package instead: `command` → `mysql-mcp-server`, `args` → `[]` (still keep `.env` at project root).
 
 ### Production (read-only)
 
@@ -384,10 +401,11 @@ docker run -e MYSQL_HOST=host.docker.internal \
 | Issue | What to check |
 | --- | --- |
 | Connection failed | MySQL up; host/port/user/password; remote: firewall, `bind-address` |
+| Log shows `.env` loaded but `MySQL:` still points to `127.0.0.1` | v1.4.2+: project `.env` overrides system `MYSQL_*`. Upgrade if needed; ensure `MYSQL_HOST` is set in `.env` |
 | Query timeout | Raise `MYSQL_QUERY_TIMEOUT`; large results: `MYSQL_MAX_ROWS` |
 | Writes rejected | Expected if `MYSQL_READONLY=true` |
 | SSL | Set `MYSQL_SSL_*` |
-| Local build not used | Run `npm run build`; `.env` at workspace root |
+| Local build not used | Run `npm run build`; workspace root = this repo; `dist/index.js` exists |
 
 ---
 

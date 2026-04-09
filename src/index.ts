@@ -3,11 +3,9 @@
  * MySQL MCP Server 入口文件
  *
  * 环境变量配置（优先级从高到低）：
- * 1. 直接设置的环境变量（含 MYSQL_URL / MYSQL_CONNECTION_STRING 解析出的连接字段）
- * 2. 当前工作目录下的 .env 文件（开发项目的 .env）
- * 3. MCP server 目录下的 .env 文件
- *
- * 也可通过 MYSQL_ENV_PATH 指定 .env 文件路径
+ * 1. 当前工作目录下已存在的 `.env` 文件中的键（dotenv `override: true`，覆盖进程继承的环境变量，避免系统里残留的 MYSQL_* 压过项目配置）
+ * 2. 进程继承的环境变量（系统、终端、MCP 客户端 `env` 等；未被 `.env` 覆盖的键仍生效）
+ * 3. MYSQL_URL / MYSQL_CONNECTION_STRING 等在连接层解析出的字段
  */
 
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -50,7 +48,7 @@ function loadEnvFile(): string {
     // 日志输出到 stderr，避免干扰 stdio 通信
     console.error(`[MySQL MCP] Loading .env from: ${envPath}`);
     if (existsSync(envPath)) {
-      dotenvConfig({ path: envPath });
+      dotenvConfig({ path: envPath, override: true });
       return envPath;
     }
   }

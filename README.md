@@ -186,7 +186,7 @@ npm start
 
 ## 配置说明
 
-在**项目根目录**放置 `.env`（可复制 [`.env.example`](./.env.example)），启动时自动加载；**勿提交 `.env`**。若 shell 已存在同名变量，通常优先生效（dotenv 默认不覆盖已有值）。
+在**项目根目录**放置 `.env`（可复制 [`.env.example`](./.env.example)），启动时自动加载；**勿提交 `.env`**。自 **v1.4.2** 起：若该文件存在，其中出现的键会**覆盖**进程已继承的环境变量（含系统里的 `MYSQL_*`）；若未找到项目 `.env`，则仍仅使用环境变量与默认行为。
 
 ### 连接与账号
 
@@ -276,9 +276,28 @@ npm start
 
 ### Cursor
 
-1. 将 MCP 配置写入项目 `.cursor/mcp.json` 或用户级 `~/.cursor/mcp.json`。
-2. 连接信息放在**项目根目录** `.env`（勿提交密码）。
-3. 全功能手动测试见 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)。
+1. **打开本仓库为工作区根目录**（使 `${workspaceFolder}` 指向含 `dist/` 与 `.env` 的目录；多文件夹工作区时请把本仓库「加入根」或单独打开）。
+2. **构建**：在项目根执行 `npm install` 与 `npm run build`，生成 `dist/index.js`。
+3. **连接信息**：写在**项目根目录** `.env`（已在 `.gitignore`，勿提交密码）。**不要**在 `.cursor/mcp.json` 的 `env` 里写密码；保持 `env: {}` 即可。
+4. **本仓库已含** [`.cursor/mcp.json`](./.cursor/mcp.json)，使用 `node` + `${workspaceFolder}/dist/index.js`。保存后可在 **Cursor → Settings → MCP** 中启用 `mysql-mcp`，或重载窗口。
+5. **环境变量优先级**（v1.4.2+）：若项目根存在 `.env`，其中出现的 `MYSQL_*` 等会**覆盖**你系统中已设置的同名变量，避免误连 `127.0.0.1`。若要用系统环境覆盖 `.env`，需临时重命名或移走项目 `.env`。
+6. 全功能手动测试见 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)。
+
+示例（与仓库内文件一致）：
+
+```json
+{
+  "mcpServers": {
+    "mysql-mcp": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {}
+    }
+  }
+}
+```
+
+若更倾向使用 **npm 全局安装**的最新包，可将 `command` 改为 `mysql-mcp-server`、`args` 改为 `[]`（仍需在项目根放 `.env`，且工作区需指向该仓库）。
 
 ### 生产只读示例
 
@@ -389,10 +408,11 @@ docker run -e MYSQL_HOST=host.docker.internal \
 | 现象 | 处理 |
 | --- | --- |
 | 连接失败 | 检查 MySQL 与 `host/port/user/password`；远程注意防火墙与 `bind-address` |
+| 日志已写「Loading .env from: …\\.env」，但下一行 `MySQL:` 仍是 `127.0.0.1` 等错误地址 | v1.4.2+：项目 `.env` 会覆盖系统里同名 `MYSQL_*`。若仍为旧行为，请升级依赖；或检查 `.env` 内是否缺少 `MYSQL_HOST` |
 | 查询超时 | 增大 `MYSQL_QUERY_TIMEOUT`；大结果配合 `MYSQL_MAX_ROWS` |
 | 只读下写入报错 | 预期行为；检查 `MYSQL_READONLY` |
 | SSL | 设置 `MYSQL_SSL_CA` 等 |
-| MCP 未加载本地构建 | 确认已 `npm run build`，且工作区根目录含 `.env` |
+| MCP 未加载本地构建 | 确认已 `npm run build`，工作区根为本仓库，且存在 `.cursor/mcp.json` 中的路径 |
 
 ---
 
