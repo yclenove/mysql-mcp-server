@@ -276,10 +276,10 @@ npm start
 
 ### Cursor
 
-1. **打开本仓库为工作区根目录**（使 `${workspaceFolder}` 指向含 `dist/` 与 `.env` 的目录；多文件夹工作区时请把本仓库「加入根」或单独打开）。
-2. **构建**：在项目根执行 `npm install` 与 `npm run build`，生成 `dist/index.js`。
+1. **打开本仓库为工作区根目录**（使进程 `cwd` 能加载项目根下的 `.env`；多文件夹工作区时请单独打开本仓库或将其设为根）。
+2. **安装 npm 包（全局）**：`npm install -g @yclenove/mysql-mcp-server@latest`，确保终端里能执行 `mysql-mcp-server`（Windows 需保证 Node 的 npm 全局 `bin` 在 PATH 中）。
 3. **连接信息**：写在**项目根目录** `.env`（已在 `.gitignore`，勿提交密码）。**不要**在 `.cursor/mcp.json` 的 `env` 里写密码；保持 `env: {}` 即可。
-4. **本仓库已含** [`.cursor/mcp.json`](./.cursor/mcp.json)，使用 `node` + `${workspaceFolder}/dist/index.js`。保存后可在 **Cursor → Settings → MCP** 中启用 `mysql-mcp`，或重载窗口。
+4. **本仓库已含** [`.cursor/mcp.json`](./.cursor/mcp.json)，使用 `mysql-mcp-server`（无额外 `args`）。保存后可在 **Cursor → Settings → MCP** 中启用 `mysql-mcp`，或重载窗口。
 5. **环境变量优先级**（v1.4.2+）：若项目根存在 `.env`，其中出现的 `MYSQL_*` 等会**覆盖**你系统中已设置的同名变量，避免误连 `127.0.0.1`。若要用系统环境覆盖 `.env`，需临时重命名或移走项目 `.env`。
 6. 全功能手动测试见 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)。
 
@@ -289,15 +289,16 @@ npm start
 {
   "mcpServers": {
     "mysql-mcp": {
-      "command": "node",
-      "args": ["${workspaceFolder}/dist/index.js"],
+      "command": "mysql-mcp-server",
+      "args": [],
       "env": {}
     }
   }
 }
 ```
 
-若更倾向使用 **npm 全局安装**的最新包，可将 `command` 改为 `mysql-mcp-server`、`args` 改为 `[]`（仍需在项目根放 `.env`，且工作区需指向该仓库）。
+**不装全局**时可用 `npx`：`"command": "npx"`，`"args": ["-y", "@yclenove/mysql-mcp-server"]`。  
+本地改源码调试时，可把 `command` / `args` 改回 **`node` + `${workspaceFolder}/dist/index.js`**（需先 `npm run build`）。
 
 ### 生产只读示例
 
@@ -330,17 +331,11 @@ npm start
    npm run build
    ```
 
-2. **方式 A：本仓库 `.cursor/mcp.json`（推荐）**  
-   已配置为使用 **`node` + `${workspaceFolder}/dist/index.js`**，直接打开本仓库根目录后重载 MCP，即可使用当前构建产物（无需先 `npm link`）。若你的 Cursor 版本不支持 `${workspaceFolder}`，可改用方式 B。
+2. **方式 A：本仓库 `.cursor/mcp.json`（与 npm 一致）**  
+   默认使用 **`mysql-mcp-server`**（全局安装，见上文「Cursor」）。打开本仓库根目录后重载 MCP 即可；连接信息仍读项目根 `.env`。
 
-3. **方式 B：全局命令 `mysql-mcp-server`**
-
-   ```bash
-   npm install -g .
-   npm link
-   ```
-
-   在 MCP 配置里将 `command` 设为 `mysql-mcp-server`（与旧版 README 一致）。
+3. **方式 B：调试当前仓库构建产物**  
+   将 `.cursor/mcp.json` 改为 **`node` + `${workspaceFolder}/dist/index.js`**，执行 `npm run build` 后重载 MCP，无需发布到 npm。
 
 4. **验证**  
    在 Cursor 中启用 MCP 后，按 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md) 逐项调用工具；或执行 `npm test`、`npm run inspector` 调试。

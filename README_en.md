@@ -271,10 +271,10 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 ### Cursor
 
-1. **Open this repo as the workspace root** (so `${workspaceFolder}` contains `dist/` and `.env`).
-2. Run `npm install` and `npm run build` to produce `dist/index.js`.
+1. **Open this repo as the workspace root** (so `cwd` loads the project root `.env`).
+2. **Global npm install**: `npm install -g @yclenove/mysql-mcp-server@latest` and ensure `mysql-mcp-server` is on `PATH` (Windows: npm global bin).
 3. Put connection settings in **project root** `.env` (gitignored). **Do not** put passwords in `.cursor/mcp.json` `env`; use `"env": {}`.
-4. This repo includes [`.cursor/mcp.json`](./.cursor/mcp.json) with `node` + `${workspaceFolder}/dist/index.js`. Enable the `mysql-mcp` server under **Settings → MCP** or reload the window.
+4. This repo includes [`.cursor/mcp.json`](./.cursor/mcp.json) with **`mysql-mcp-server`** (no args). Enable the `mysql-mcp` server under **Settings → MCP** or reload the window.
 5. **Env precedence (v1.4.2+)**: keys present in project `.env` override same-named variables from the OS, so you do not accidentally connect to `127.0.0.1`.
 6. Full manual test: [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md).
 
@@ -282,15 +282,16 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 {
   "mcpServers": {
     "mysql-mcp": {
-      "command": "node",
-      "args": ["${workspaceFolder}/dist/index.js"],
+      "command": "mysql-mcp-server",
+      "args": [],
       "env": {}
     }
   }
 }
 ```
 
-To use a **globally installed** package instead: `command` → `mysql-mcp-server`, `args` → `[]` (still keep `.env` at project root).
+**Without global install**, use `npx`: `"command": "npx"`, `"args": ["-y", "@yclenove/mysql-mcp-server"]`.  
+For **local source debugging**, switch to `node` + `${workspaceFolder}/dist/index.js` after `npm run build`.
 
 ### Production (read-only)
 
@@ -323,17 +324,11 @@ To use a **globally installed** package instead: `command` → `mysql-mcp-server
    npm run build
    ```
 
-2. **Option A — this repo’s `.cursor/mcp.json` (recommended)**  
-   Uses `node` + `${workspaceFolder}/dist/index.js` so Cursor loads the **built** entrypoint from this workspace (no `npm link` required). If `${workspaceFolder}` is unsupported in your Cursor version, use option B.
+2. **Option A — `.cursor/mcp.json` (matches npm)**  
+   Defaults to **`mysql-mcp-server`** (global install, see **Cursor** above). Reload MCP; connection still reads project root `.env`.
 
-3. **Option B — global `mysql-mcp-server`**
-
-   ```bash
-   npm install -g .
-   npm link
-   ```
-
-   Set MCP `command` to `mysql-mcp-server`.
+3. **Option B — debug this repo’s build**  
+   Set MCP to **`node` + `${workspaceFolder}/dist/index.js`**, run `npm run build`, reload MCP.
 
 4. **Verify**  
    Reload MCP in Cursor and follow [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md), or run `npm test` / `npm run inspector`.

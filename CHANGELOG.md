@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.3] - 2026-04-09
+
+### 变更
+
+- `.cursor/mcp.json` 默认改为全局命令 `mysql-mcp-server`（需 `npm install -g @yclenove/mysql-mcp-server`）；README 补充 `npx` 与本仓库 `dist` 调试方式
+
 ## [1.4.2] - 2026-04-09
 
 ### 修复
