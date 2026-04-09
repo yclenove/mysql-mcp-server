@@ -1,3 +1,12 @@
+# 发布到 npm 需要仓库 Secret：NPM_TOKEN
+#
+# 若账号开启 2FA，必须使用「可在自动化场景发布、不要求交互 OTP」的令牌，否则会报 EOTP：
+# - 推荐：npm 网站 → Access Tokens → Generate New Token → 选「Granular Access Token」，
+#   勾选对本包（或用户）的 Read and Write，并开启「Publish」相关能力下允许绕过 2FA 的选项
+#   （界面文案可能为 Skip OTP / automation / CI 等，以 npm 当前页面为准）。
+# - 或：Classic Token 中选类型「Automation」（专为 CI 设计，发布时可绕过 OTP）。
+# 勿使用普通 Publish token 且未勾选绕过项，否则 Actions 里无法输入认证器验证码。
+#
 name: Publish to NPM
 
 env:
@@ -37,6 +46,7 @@ jobs:
         run: npm run test
 
       - name: Publish to NPM
+        # NODE_AUTH_TOKEN 须为 Granular（含发布绕过 2FA）或 Classic Automation，见文件顶部说明
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

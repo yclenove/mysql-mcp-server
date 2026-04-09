@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.2] - 2026-04-09
+
+### 文档
+
+- README / README_en：说明 GitHub Actions 发布时 `NPM_TOKEN` 须使用 Granular（发布绕过 2FA）或 Classic **Automation** 令牌，避免 `EOTP`
+- `publish.yml`：文件顶部与发布步骤补充 NPM_TOKEN 配置说明
+
 ## [1.2.1] - 2026-04-09
 
 ### 变更

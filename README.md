@@ -86,6 +86,15 @@ npm start
 
 npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysql-mcp-server`）。**只有登录到拥有该作用域的 npm 账号**后才能发布；若你的 npm 用户名不是 `yclenove`，请把 `name` 改成 `@你的npm用户名/mysql-mcp-server`，再执行 `npm publish --access public`。Cursor / Claude 里请把 `npx` 的参数字符串改成与你的包名一致。
 
+#### GitHub Actions 发布（避免 `npm error code EOTP`）
+
+若仓库已开启 2FA，在 **GitHub → Settings → Secrets → `NPM_TOKEN`** 里不能使用「每次发布都要在终端输 OTP」的普通令牌。请改为：
+
+1. 登录 [npm Access Tokens](https://www.npmjs.com/settings/~/tokens)，新建 **Granular Access Token**：对本包或用户授予 **Read and Write**，并在发布相关权限中勾选 **允许在自动化/CI 场景绕过 2FA**（具体英文以 npm 页面为准，如 _Bypass two-factor authentication_）。
+2. 或新建 **Classic Token**，类型选 **Automation**（专为 CI 设计，发布时不索要 OTP）。
+
+将生成的一次性 token 完整粘贴到 `NPM_TOKEN`，再重新运行 **Publish to NPM** 工作流。详见 `.github/workflows/publish.yml` 文件顶部注释。
+
 ## 工具 API
 
 | 工具                | 说明                                              | 参数                                                    |

@@ -86,6 +86,15 @@ npm start
 
 The published package name comes from `package.json` → `name` (currently `@yclenove/mysql-mcp-server`). You must be logged into npm as a user **allowed to publish under that scope**. If your npm username differs, change `name` to `@your-npm-username/mysql-mcp-server`, then run `npm publish --access public`. Update MCP client configs (`npx` args) to match.
 
+#### GitHub Actions publishing (avoid `npm error code EOTP`)
+
+If 2FA is enabled on your npm account, the **`NPM_TOKEN`** secret cannot be a token that still requires an interactive OTP on every publish. Use one of:
+
+1. **Granular Access Token** with Read and Write on the package (or user) and enable the option to **bypass 2FA for publishing** in automation/CI (wording on npm may vary).
+2. **Classic token** with type **Automation** (intended for CI; no OTP prompt on publish).
+
+Paste the token into **GitHub → Repository → Settings → Secrets → `NPM_TOKEN`**, then re-run the workflow. See comments at the top of `.github/workflows/publish.yml`.
+
 ## Tool API
 
 | Tool                | Description                                                       | Parameters                                              |
