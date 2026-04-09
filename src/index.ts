@@ -16,6 +16,10 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { createServer } from './server.js';
 import { testConnectionWithDetails, closePool, getConfigFromEnv } from './db/connection.js';
+import {
+  getDatabaseAllowlist,
+  validateStartupDatabaseAgainstAllowlist,
+} from './db/allowlist.js';
 
 // 智能加载 .env 文件（按优先级）
 function loadEnvFile(): string {
@@ -64,6 +68,14 @@ async function main() {
   log(
     `MySQL: ${config.host}:${config.port}/${config.database || '(no db)'} (readonly: ${process.env.MYSQL_READONLY === 'true'})`
   );
+
+  try {
+    getDatabaseAllowlist();
+    validateStartupDatabaseAgainstAllowlist();
+  } catch (e) {
+    log(`ERROR: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
+  }
 
   // 测试数据库连接
   const connectionResult = await testConnectionWithDetails();

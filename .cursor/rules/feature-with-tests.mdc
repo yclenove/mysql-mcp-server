@@ -1,0 +1,11 @@
+---
+description: 新功能必须配套单测与文档更新
+alwaysApply: true
+---
+
+# 功能与单测
+
+- **新增或变更行为**（`src/` 下工具、执行器、连接、资源、Prompts 等）时，必须**同步**增加或更新 **Node 测试**（`test/*.test.mjs`），并在 `package.json` 的 `test` 脚本中纳入新文件（若新增套件）。
+- 单测应覆盖：正常路径、边界条件、与安全相关的拒绝路径（若适用）；尽量不依赖真实数据库，可测的纯函数在**无 DB** 下应能通过。
+- **CHANGELOG.md** 按 Keep a Changelog 用中文记一条（Added/Changed/Fixed 等）；**README.md / README_en.md** 若涉及用户可见配置或行为，同步更新。
+- **禁止**在代码或测试中硬编码数据库密码；连接信息仅从环境变量或 `.env`（已 gitignore）读取。

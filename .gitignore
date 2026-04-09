@@ -57,9 +57,11 @@ assets
 # 集成测试（含本地配置）
 test-integration.mjs
 
-# Cursor：仅提交 MCP 示例配置；其余本地规则仍忽略
+# Cursor：提交 mcp.json 与 rules；其余仍忽略
 .cursor/*
 !.cursor/mcp.json
+!.cursor/rules/
+!.cursor/rules/**
 
 # 本地操作说明（不提交）
 NPM发布指南-勿提交.md

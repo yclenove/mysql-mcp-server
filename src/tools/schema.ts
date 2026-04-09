@@ -12,6 +12,7 @@ import {
   validateIdentifier,
 } from '../db/executor.js';
 import { getPool, testConnectionWithDetails } from '../db/connection.js';
+import { isDatabaseOnAllowlist, filterShowDatabasesRows } from '../db/allowlist.js';
 import { auditLog } from '../audit.js';
 
 /**
@@ -90,6 +91,18 @@ export function registerSchemaTools(server: McpServer): void {
         };
       }
 
+      if (!isDatabaseOnAllowlist(database)) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `错误：数据库「${database}」不在 MYSQL_DATABASE_ALLOWLIST 白名单中`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const startTime = Date.now();
       try {
         const pool = getPool();
@@ -122,11 +135,12 @@ export function registerSchemaTools(server: McpServer): void {
       };
     }
 
+    const rows = filterShowDatabasesRows(result.data || []);
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(result.data?.map((row: any) => row.Database) || []),
+          text: JSON.stringify(rows.map((row: any) => row.Database)),
         },
       ],
     };
@@ -141,6 +155,18 @@ export function registerSchemaTools(server: McpServer): void {
       },
     },
     async ({ database }, _extra) => {
+      if (database && !isDatabaseOnAllowlist(database)) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `错误：数据库「${database}」不在 MYSQL_DATABASE_ALLOWLIST 白名单中`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const result = await listTables(database);
 
       if (!result.success) {

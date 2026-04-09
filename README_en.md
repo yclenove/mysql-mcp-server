@@ -174,6 +174,7 @@ Create a `.env` file in the **project root** (copy from [`.env.example`](./.env.
 | `MYSQL_USER`             | root      | Username                                                      |
 | `MYSQL_PASSWORD`         | -         | Password                                                      |
 | `MYSQL_DATABASE`         | -         | Default database                                              |
+| `MYSQL_DATABASE_ALLOWLIST` | -       | Optional comma-separated DB names (alphanumeric + underscore only); unset = no restriction; affects startup check, `use_database` / `list_tables` (when database is set), `show_databases`, and Resource `mysql://databases` |
 | `MYSQL_URL`              | -         | `mysql://` or `mysql2://` URI; alternative to discrete vars; URL-encode passwords |
 | `MYSQL_CONNECTION_STRING`| -         | Alias for `MYSQL_URL` (naming compatibility)                    |
 | `MYSQL_READONLY`         | false     | Read-only mode                                                |

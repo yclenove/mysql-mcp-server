@@ -5,6 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { listTables, describeTable, listDatabases } from './db/executor.js';
 import { getPool, isReadOnly } from './db/connection.js';
+import { filterShowDatabasesRows } from './db/allowlist.js';
 
 /**
  * 注册 MCP Resources
@@ -161,7 +162,8 @@ export function registerResources(server: McpServer): void {
         };
       }
 
-      const dbNames = result.data?.map((r: any) => r.Database) || [];
+      const rows = filterShowDatabasesRows(result.data || []);
+      const dbNames = rows.map((r: any) => r.Database);
       return {
         contents: [
           {

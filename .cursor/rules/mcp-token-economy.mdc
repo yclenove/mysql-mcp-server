@@ -1,0 +1,22 @@
+---
+description: 修改 MCP 工具/资源/Prompts 时须兼顾 LLM token 消耗
+globs: src/server.ts,src/resources.ts,src/prompts.ts,src/tools/**/*.ts
+alwaysApply: false
+---
+
+# MCP 与 Token 节约
+
+在新增或修改 **Tools / Resources / Prompts**（含 `server.tool`、`server.resource`、`server.prompt`、工具描述、`getToolsDescription`）时，默认把 **上下文体积** 当作一等约束，在不影响安全与可理解性的前提下节约 token。
+
+## 必须遵守
+
+- **工具描述**：一句话说清用途与关键约束（只读/需 WHERE/上限），避免长段落、重复列举已在 schema 里的参数说明。
+- **工具返回**：优先紧凑 JSON；默认不返回调试字段；列表类响应避免冗余键名与重复说明。
+- **Resources**：正文尽量短、结构化；避免把整份 README 塞进 resource。
+- **Prompts**：步骤列表够用即可，不写「教学长文」；避免与工具描述重复的同一段话。
+- **新增工具前**：评估是否可与现有工具合并参数，避免工具数量膨胀导致每次 `list_tools` 消耗过大。
+
+## 取舍原则
+
+- **安全与正确性** 不因为省 token 而削弱（校验、拦截、参数化仍须完整）。
+- **可发现性**：描述过短导致模型误用工具时，应加长关键句而非堆叠套话。

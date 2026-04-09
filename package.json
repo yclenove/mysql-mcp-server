@@ -1,6 +1,6 @@
 {
   "name": "@yclenove/mysql-mcp-server",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,7 +23,7 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\"",
     "format:check": "prettier --check \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\"",
-    "test": "node --test --test-name-pattern=. test/audit.test.mjs test/connection-url.test.mjs test/executor.test.mjs",
+    "test": "node --test --test-name-pattern=. test/audit.test.mjs test/connection-url.test.mjs test/database-allowlist.test.mjs test/executor.test.mjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

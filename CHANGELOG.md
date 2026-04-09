@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.6] - 2026-04-09
+
+### 新增
+
+- 环境变量 `MYSQL_DATABASE_ALLOWLIST`：逗号分隔的库名白名单；未设置则不限制。启动时校验默认库（含连接串解析出的库名）；`use_database`、带库参数的 `list_tables` 拒绝非白名单库；`show_databases` 工具与 `mysql://databases` 资源仅暴露白名单内的库名
+- 新增 `src/db/allowlist.ts` 与 `test/database-allowlist.test.mjs`
+
 ## [1.2.5] - 2026-04-09
 
 ### 新增
