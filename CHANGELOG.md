@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.4] - 2026-04-09
+
+### 变更
+
+- `MCP_CURSOR_TEST.md`：前置条件对齐当前 Cursor 配置（npm 全局 / npx / 本仓库 `dist`）；补充 v1.4.2 起 `.env` 覆盖系统 `MYSQL_*` 的说明；分步表增加多连接与运维（可选）；总控清单增加第 10 步与安全说明
+
 ## [1.4.3] - 2026-04-09
 
 ### 变更

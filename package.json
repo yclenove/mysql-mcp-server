@@ -1,6 +1,6 @@
 {
   "name": "@yclenove/mysql-mcp-server",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
