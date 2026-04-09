@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.5] - 2026-04-09
+
+### 变更
+
+- `MCP_CURSOR_TEST.md`：「总控」清单增加纯文本代码块便于一键复制，并与带反引号列表并列
+
 ## [1.4.4] - 2026-04-09
 
 ### 变更

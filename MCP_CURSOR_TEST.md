@@ -32,6 +32,27 @@
 
 ## 一条「总控」提示（可整段粘贴）
 
+下面两段内容一致：**纯文本块**适合整段复制；**编号列表**在仓库里更易读。
+
+### 纯文本（一键复制）
+
+```text
+请通过已启用的 MySQL MCP 依次完成下列步骤，每步简要说明结果。
+
+1. test_connection
+2. show_databases 与 list_tables
+3. 任选一表执行 describe_table、show_indexes、show_create_table
+4. query 执行 SELECT 1 与一次分页查询
+5. explain_query
+6. 读取资源 mysql://databases、mysql://status/pool、mysql://schema/overview 及一张表的 mysql://schema/table/{表名}
+7. 调用四个 Prompts（analyze-table、generate-query、optimize-query、data-overview）
+8. 若确认测试库可写，再在临时表上演示 insert / update / delete、batch_execute、batch_insert，必要时 create_table
+9. 若有存储过程则 call_procedure，否则说明跳过
+10. （可选）若你配置了多 DSN 或运维类环境变量，再按 README 测 list_connections / use_connection 或 process_list 等
+```
+
+### 带反引号（与上文等价）
+
 请通过已启用的 MySQL MCP **依次**完成：
 
 1. `test_connection`
@@ -44,8 +65,6 @@
 8. 若确认测试库可写，再在临时表上演示 `insert` / `update` / `delete`、`batch_execute`、`batch_insert`，必要时 `create_table`
 9. 若有存储过程则 `call_procedure`，否则说明跳过
 10. （可选）若你配置了多 DSN 或运维类环境变量，再按 README 测 `list_connections` / `use_connection` 或 `process_list` 等
-
-每步简要说明结果。
 
 ## 安全与预期失败
 
