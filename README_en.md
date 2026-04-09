@@ -1,6 +1,6 @@
 # MySQL MCP Server
 
-[![npm version](https://img.shields.io/npm/v/@wenit/mysql-mcp-server.svg)](https://www.npmjs.com/package/@wenit/mysql-mcp-server)
+[![npm version](https://img.shields.io/npm/v/@yclenove/mysql-mcp-server.svg)](https://www.npmjs.com/package/@yclenove/mysql-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 
@@ -62,13 +62,13 @@ MySQL Database
 No installation needed:
 
 ```bash
-npx -y @wenit/mysql-mcp-server
+npx -y @yclenove/mysql-mcp-server
 ```
 
 ### Global Install
 
 ```bash
-npm install -g @wenit/mysql-mcp-server
+npm install -g @yclenove/mysql-mcp-server
 mysql-mcp-server
 ```
 
@@ -81,6 +81,10 @@ npm install
 npm run build
 npm start
 ```
+
+### Publish under your npm account
+
+The published package name comes from `package.json` → `name` (currently `@yclenove/mysql-mcp-server`). You must be logged into npm as a user **allowed to publish under that scope**. If your npm username differs, change `name` to `@your-npm-username/mysql-mcp-server`, then run `npm publish --access public`. Update MCP client configs (`npx` args) to match.
 
 ## Tool API
 
@@ -184,7 +188,7 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
   "mcpServers": {
     "mysql": {
       "command": "npx",
-      "args": ["-y", "@wenit/mysql-mcp-server"],
+      "args": ["-y", "@yclenove/mysql-mcp-server"],
       "env": {
         "MYSQL_HOST": "localhost",
         "MYSQL_PORT": "3306",
@@ -199,7 +203,7 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 #### Cursor
 
-Add MCP server in Cursor settings with command `npx -y @wenit/mysql-mcp-server` and configure environment variables accordingly.
+Add MCP server in Cursor settings with command `npx -y @yclenove/mysql-mcp-server` and configure environment variables accordingly.
 
 #### Production (Read-Only Mode)
 
@@ -208,7 +212,7 @@ Add MCP server in Cursor settings with command `npx -y @wenit/mysql-mcp-server` 
   "mcpServers": {
     "mysql-prod": {
       "command": "npx",
-      "args": ["-y", "@wenit/mysql-mcp-server"],
+      "args": ["-y", "@yclenove/mysql-mcp-server"],
       "env": {
         "MYSQL_HOST": "prod-db.example.com",
         "MYSQL_USER": "readonly_user",

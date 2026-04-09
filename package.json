@@ -1,6 +1,6 @@
 {
-  "name": "@wenit/mysql-mcp-server",
-  "version": "1.1.1",
+  "name": "@yclenove/mysql-mcp-server",
+  "version": "1.2.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,7 +34,7 @@
     "claude",
     "ai"
   ],
-  "author": "wenit",
+  "author": "yclenove",
   "license": "MIT",
   "description": "MySQL MCP Server - 通过 MCP 协议操作 MySQL 数据库",
   "repository": {

@@ -1,6 +1,6 @@
 # MySQL MCP Server
 
-[![npm version](https://img.shields.io/npm/v/@wenit/mysql-mcp-server.svg)](https://www.npmjs.com/package/@wenit/mysql-mcp-server)
+[![npm version](https://img.shields.io/npm/v/@yclenove/mysql-mcp-server.svg)](https://www.npmjs.com/package/@yclenove/mysql-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 
@@ -62,13 +62,13 @@ MySQL Database
 无需安装，直接运行：
 
 ```bash
-npx -y @wenit/mysql-mcp-server
+npx -y @yclenove/mysql-mcp-server
 ```
 
 ### 全局安装
 
 ```bash
-npm install -g @wenit/mysql-mcp-server
+npm install -g @yclenove/mysql-mcp-server
 mysql-mcp-server
 ```
 
@@ -81,6 +81,10 @@ npm install
 npm run build
 npm start
 ```
+
+### 自行发布 / 换包名
+
+npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysql-mcp-server`）。**只有登录到拥有该作用域的 npm 账号**后才能发布；若你的 npm 用户名不是 `yclenove`，请把 `name` 改成 `@你的npm用户名/mysql-mcp-server`，再执行 `npm publish --access public`。Cursor / Claude 里请把 `npx` 的参数字符串改成与你的包名一致。
 
 ## 工具 API
 
@@ -184,7 +188,7 @@ npm start
   "mcpServers": {
     "mysql": {
       "command": "npx",
-      "args": ["-y", "@wenit/mysql-mcp-server"],
+      "args": ["-y", "@yclenove/mysql-mcp-server"],
       "env": {
         "MYSQL_HOST": "localhost",
         "MYSQL_PORT": "3306",
@@ -199,7 +203,7 @@ npm start
 
 #### Cursor
 
-在 Cursor 设置中添加 MCP 服务器，命令为 `npx -y @wenit/mysql-mcp-server`，配置对应的环境变量。
+在 Cursor 设置中添加 MCP 服务器，命令为 `npx -y @yclenove/mysql-mcp-server`，配置对应的环境变量。
 
 #### 生产环境（只读模式）
 
@@ -208,7 +212,7 @@ npm start
   "mcpServers": {
     "mysql-prod": {
       "command": "npx",
-      "args": ["-y", "@wenit/mysql-mcp-server"],
+      "args": ["-y", "@yclenove/mysql-mcp-server"],
       "env": {
         "MYSQL_HOST": "prod-db.example.com",
         "MYSQL_USER": "readonly_user",

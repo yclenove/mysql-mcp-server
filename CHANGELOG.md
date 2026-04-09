@@ -4,11 +4,17 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.0] - 2026-04-09
+
+### 变更
+
+- npm 包名由 `@wenit/mysql-mcp-server` 改为 `@yclenove/mysql-mcp-server`（与当前仓库维护者一致；若你的 npm 用户名不同，请自行修改 `package.json` 的 `name` 后再发布）
+
 ## [1.1.1] - 2026-04-09
 
 ### 新增
 
-- 根目录 `AGENTS.md`：约定修改 MCP 时须兼顾 LLM token 节约（`.cursor/rules/mcp-token-economy.mdc` 为本地同名补充）
+- 根目录 `AGENTS.md`：约定修改 MCP 时须兼顾 LLM token 节约
 
 ### 优化
 
