@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.3] - 2026-04-09
+
+### 变更
+
+- 升级依赖：`@modelcontextprotocol/sdk`、`mysql2`、`@types/node` 等；`@typescript-eslint/*`、`prettier`、`eslint` / `@eslint/js` 等开发依赖同步至当前主版本线内较新版本（未升级至 ESLint 10、TypeScript 6、`dotenv` 17，以避免潜在破坏性变更）
+
 ## [1.2.2] - 2026-04-09
 
 ### 优化
