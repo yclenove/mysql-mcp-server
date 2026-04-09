@@ -17,7 +17,12 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "inspector": "npx -y @modelcontextprotocol/inspector node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\"",
+    "format:check": "prettier --check \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\"",
+    "test": "node --test",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -33,12 +38,12 @@
   "description": "MySQL MCP Server - 通过 MCP 协议操作 MySQL 数据库",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wenit/mysql-mcp-server.git"
+    "url": "git+https://github.com/yclenove/mysql-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/wenit/mysql-mcp-server/issues"
+    "url": "https://github.com/yclenove/mysql-mcp-server/issues"
   },
-  "homepage": "https://github.com/wenit/mysql-mcp-server#readme",
+  "homepage": "https://github.com/yclenove/mysql-mcp-server#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "dotenv": "^16.4.7",
@@ -46,7 +51,12 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^9.35.0",
     "@types/node": "^25.4.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "eslint": "^9.35.0",
+    "prettier": "^3.6.2",
     "typescript": "^5.9.3"
   }
 }

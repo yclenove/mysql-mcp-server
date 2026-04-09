@@ -3,7 +3,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { executeQuery } from '../db/executor.js';
+import { executeQuery, isReadOnlyQuery } from '../db/executor.js';
 import { ExecutionMode } from '../types/index.js';
 
 /**
@@ -19,16 +19,15 @@ export function registerQueryTools(server: McpServer): void {
       params: z.array(z.any()).optional().describe('查询参数（用于参数化查询）'),
     },
     async ({ sql, params = [] }) => {
-      // 验证是否为 SELECT 语句
-      const trimmed = sql.trim().toLowerCase();
-      if (!trimmed.startsWith('select') && !trimmed.startsWith('show') && !trimmed.startsWith('describe')) {
+      // 验证是否为只读查询语句
+      if (!isReadOnlyQuery(sql)) {
         return {
           content: [{ type: 'text', text: '错误：此工具只允许执行 SELECT/SHOW/DESCRIBE 查询' }],
           isError: true,
         };
       }
 
-      const result = await executeQuery(sql, params, ExecutionMode.READWRITE);
+      const result = await executeQuery(sql, params, ExecutionMode.READONLY);
 
       if (!result.success) {
         return {
@@ -45,6 +44,8 @@ export function registerQueryTools(server: McpServer): void {
               {
                 success: true,
                 rowCount: result.data?.length || 0,
+                totalRows: result.totalRows ?? (result.data?.length || 0),
+                truncated: result.truncated || false,
                 executionTime: `${result.executionTime}ms`,
                 data: result.data || [],
               },
@@ -66,15 +67,14 @@ export function registerQueryTools(server: McpServer): void {
       params: z.array(z.any()).optional().describe('查询参数'),
     },
     async ({ sql, params = [] }) => {
-      const trimmed = sql.trim().toLowerCase();
-      if (!trimmed.startsWith('select') && !trimmed.startsWith('show') && !trimmed.startsWith('describe')) {
+      if (!isReadOnlyQuery(sql)) {
         return {
           content: [{ type: 'text', text: '错误：此工具只允许执行 SELECT/SHOW/DESCRIBE 查询' }],
           isError: true,
         };
       }
 
-      const result = await executeQuery(sql, params, ExecutionMode.READWRITE);
+      const result = await executeQuery(sql, params, ExecutionMode.READONLY);
 
       if (!result.success) {
         return {
@@ -91,6 +91,8 @@ export function registerQueryTools(server: McpServer): void {
               {
                 success: true,
                 rowCount: result.data?.length || 0,
+                totalRows: result.totalRows ?? (result.data?.length || 0),
+                truncated: result.truncated || false,
                 executionTime: `${result.executionTime}ms`,
                 data: result.data || [],
               },

@@ -12,6 +12,10 @@ export interface DatabaseConfig {
   connectionLimit?: number;
   queueLimit?: number;
   timeout?: number;
+  queryTimeout?: number;
+  retryCount?: number;
+  retryDelayMs?: number;
+  maxRows?: number;
   ssl?: {
     ca?: string;
     cert?: string;
@@ -23,6 +27,8 @@ export interface DatabaseConfig {
 export interface QueryResult {
   success: boolean;
   data?: any[];
+  truncated?: boolean;
+  totalRows?: number;
   affectedRows?: number;
   insertId?: number;
   changedRows?: number;

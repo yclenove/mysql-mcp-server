@@ -3,7 +3,7 @@
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { executeBatch, isReadOnlyQuery } from '../db/executor.js';
+import { executeBatch, isReadOnlyQuery, validateIdentifier, escapeIdentifier } from '../db/executor.js';
 import { ExecutionMode } from '../types/index.js';
 import { isReadOnly } from '../db/connection.js';
 
@@ -58,9 +58,7 @@ export function registerBatchTools(server: McpServer): void {
 
       // 如果在只读模式下，检查是否有非查询语句
       if (readOnlyMode) {
-        const hasWriteOperation = statements.some(
-          (stmt) => !isReadOnlyQuery(stmt.sql)
-        );
+        const hasWriteOperation = statements.some((stmt) => !isReadOnlyQuery(stmt.sql));
         if (hasWriteOperation) {
           return {
             content: [
@@ -126,15 +124,15 @@ export function registerBatchTools(server: McpServer): void {
   // 批量查询（只读）
   server.tool(
     'batch_query',
-    `批量执行多条 SELECT 查询（只读模式）。最多支持 ${MAX_BATCH_SIZE} 条查询。` +
+    `批量执行多条只读查询（SELECT/SHOW/DESCRIBE/DESC/EXPLAIN）。最多支持 ${MAX_BATCH_SIZE} 条查询。` +
     '性能提示：所有查询在同一个事务中执行，适合需要多次查询的场景。' +
-    '限制：只能执行 SELECT/SHOW 查询，如需执行修改操作请使用 batch_execute。' +
+    '限制：只能执行只读查询语句，如需执行修改操作请使用 batch_execute。' +
     '使用示例：[{sql:"SELECT * FROM users WHERE id=?", params:[1]}, {sql:"SELECT COUNT(*) FROM orders", params:[]}]',
     {
       queries: z
         .array(
           z.object({
-            sql: z.string().describe('SELECT SQL 语句'),
+            sql: z.string().describe('只读 SQL 语句'),
             params: z.array(z.any()).optional().describe('查询参数'),
           })
         )
@@ -161,15 +159,14 @@ export function registerBatchTools(server: McpServer): void {
         };
       }
 
-      // 验证所有语句都是 SELECT
+      // 验证所有语句都是只读查询
       for (const query of queries) {
-        const trimmed = query.sql.trim().toLowerCase();
-        if (!trimmed.startsWith('select') && !trimmed.startsWith('show')) {
+        if (!isReadOnlyQuery(query.sql)) {
           return {
             content: [
               {
                 type: 'text',
-                text: `错误：第 ${queries.indexOf(query) + 1} 条语句不是 SELECT/SHOW 查询，请使用 batch_execute 工具`,
+                text: `错误：第 ${queries.indexOf(query) + 1} 条语句不是只读查询语句，请使用 batch_execute 工具`,
               },
             ],
             isError: true,
@@ -177,7 +174,7 @@ export function registerBatchTools(server: McpServer): void {
         }
       }
 
-      const result = await executeBatch(queries, ExecutionMode.READWRITE);
+      const result = await executeBatch(queries, ExecutionMode.READONLY);
 
       if (!result.success) {
         return {
@@ -212,6 +209,8 @@ export function registerBatchTools(server: McpServer): void {
                 results: result.results.map((r, index) => ({
                   queryIndex: index + 1,
                   rowCount: r.data?.length || 0,
+                  totalRows: r.totalRows ?? (r.data?.length || 0),
+                  truncated: r.truncated || false,
                   data: r.data || [],
                   executionTime: r.executionTime,
                 })),
@@ -273,16 +272,66 @@ export function registerBatchTools(server: McpServer): void {
         };
       }
 
-      // 构建 INSERT 语句
-      const statements = records.map((record) => {
-        const columns = Object.keys(record);
-        const values = Object.values(record);
-        const placeholders = values.map(() => '?').join(', ');
-        const sql = `INSERT INTO \`${table}\` (${columns.join(', ')}) VALUES (${placeholders})`;
-        return { sql, params: values };
-      });
+      const tableValidationError = validateIdentifier(table, '表名');
+      if (tableValidationError) {
+        return {
+          content: [{ type: 'text', text: `错误：${tableValidationError}` }],
+          isError: true,
+        };
+      }
 
-      const result = await executeBatch(statements, ExecutionMode.READWRITE);
+      const firstRecord = records[0];
+      if (!firstRecord) {
+        return {
+          content: [{ type: 'text', text: '错误：记录列表不能为空' }],
+          isError: true,
+        };
+      }
+      const firstColumns = Object.keys(firstRecord);
+      if (firstColumns.length === 0) {
+        return {
+          content: [{ type: 'text', text: '错误：记录字段不能为空' }],
+          isError: true,
+        };
+      }
+
+      for (const column of firstColumns) {
+        const columnValidationError = validateIdentifier(column, `字段名 ${column}`);
+        if (columnValidationError) {
+          return {
+            content: [{ type: 'text', text: `错误：${columnValidationError}` }],
+            isError: true,
+          };
+        }
+      }
+
+      let result;
+      try {
+        // 构建 INSERT 语句
+        const statements = records.map((record, index) => {
+          const columns = Object.keys(record);
+          if (columns.length !== firstColumns.length || !firstColumns.every((col) => Object.prototype.hasOwnProperty.call(record, col))) {
+            throw new Error(`第 ${index + 1} 条记录字段不一致，批量插入要求所有记录字段完全一致`);
+          }
+
+          const values = Object.values(record);
+          const placeholders = values.map(() => '?').join(', ');
+          const escapedColumns = columns.map((column) => escapeIdentifier(column)).join(', ');
+          const sql = `INSERT INTO ${escapeIdentifier(table)} (${escapedColumns}) VALUES (${placeholders})`;
+          return { sql, params: values };
+        });
+        result = await executeBatch(statements, ExecutionMode.READWRITE);
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `错误：${error instanceof Error ? error.message : '批量插入构建失败'}`,
+            },
+          ],
+          isError: true,
+        };
+      }
 
       if (!result.success) {
         return {

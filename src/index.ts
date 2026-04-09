@@ -13,14 +13,9 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { config as dotenvConfig } from 'dotenv';
 import { existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join, resolve } from 'path';
+import { join } from 'path';
 import { createServer } from './server.js';
-import { testConnection, closePool, getConfigFromEnv } from './db/connection.js';
-
-// 获取当前文件目录
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { testConnectionWithDetails, closePool, getConfigFromEnv } from './db/connection.js';
 
 // 智能加载 .env 文件（按优先级）
 function loadEnvFile(): string {
@@ -69,10 +64,11 @@ async function main() {
   log(`MySQL: ${config.host}:${config.port}/${config.database || '(no db)'} (readonly: ${process.env.MYSQL_READONLY === 'true'})`);
   
   // 测试数据库连接
-  const connected = await testConnection();
+  const connectionResult = await testConnectionWithDetails();
   
-  if (!connected) {
-    log('ERROR: Failed to connect to MySQL database');
+  if (!connectionResult.success) {
+    const code = connectionResult.code ? ` [${connectionResult.code}]` : '';
+    log(`ERROR: Failed to connect to MySQL database${code}: ${connectionResult.error || 'unknown error'}`);
     process.exit(1);
   }
   

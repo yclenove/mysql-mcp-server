@@ -2,8 +2,18 @@
  * SQL 执行器
  */
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import { getPool, getConnection, isReadOnly } from './connection.js';
+import { getPool, getConnection } from './connection.js';
 import { QueryResult, BatchResult, ExecutionMode } from '../types/index.js';
+
+const IDENTIFIER_REGEX = /^[A-Za-z0-9_]+$/;
+const RETRIABLE_ERROR_CODES = new Set([
+  'PROTOCOL_CONNECTION_LOST',
+  'ER_LOCK_DEADLOCK',
+  'ER_LOCK_WAIT_TIMEOUT',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'EPIPE',
+]);
 
 /**
  * 判断 SQL 是否为只读查询
@@ -15,13 +25,94 @@ export function isReadOnlyQuery(sql: string): boolean {
 }
 
 /**
+ * 校验 SQL 标识符（表名、列名等）
+ */
+export function validateIdentifier(name: string, fieldName: string = '标识符'): string | null {
+  if (!name || typeof name !== 'string') {
+    return `${fieldName}不能为空`;
+  }
+  if (!IDENTIFIER_REGEX.test(name)) {
+    return `${fieldName}不合法，仅支持字母、数字和下划线`;
+  }
+  return null;
+}
+
+/**
+ * 转义 SQL 标识符
+ */
+export function escapeIdentifier(name: string): string {
+  return `\`${name.replace(/`/g, '``')}\``;
+}
+
+function stripQuotedContentAndComments(sql: string): string {
+  return sql
+    .replace(/--.*$/gm, ' ')
+    .replace(/#.*$/gm, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/'(?:''|[^'])*'/g, "''")
+    .replace(/"(?:\\"|[^"])*"/g, '""')
+    .replace(/`(?:``|[^`])*`/g, '``');
+}
+
+function getRuntimeConfig() {
+  return {
+    queryTimeout: parseInt(process.env.MYSQL_QUERY_TIMEOUT || '30000', 10),
+    retryCount: parseInt(process.env.MYSQL_RETRY_COUNT || '2', 10),
+    retryDelayMs: parseInt(process.env.MYSQL_RETRY_DELAY_MS || '200', 10),
+    maxRows: parseInt(process.env.MYSQL_MAX_ROWS || '1000', 10),
+  };
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetriableError(error: unknown): boolean {
+  const code = (error as { code?: string })?.code;
+  return !!code && RETRIABLE_ERROR_CODES.has(code);
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  if (timeoutMs <= 0) {
+    return promise;
+  }
+  return await Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`查询超时（>${timeoutMs}ms）`)), timeoutMs);
+    }),
+  ]);
+}
+
+async function executeWithRetry<T>(runner: () => Promise<T>, allowRetry: boolean): Promise<T> {
+  const { retryCount, retryDelayMs } = getRuntimeConfig();
+  const attempts = Math.max(0, retryCount) + 1;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await runner();
+    } catch (error) {
+      const shouldRetry = allowRetry && i < attempts - 1 && isRetriableError(error);
+      if (!shouldRetry) {
+        throw error;
+      }
+      const backoff = Math.max(50, retryDelayMs) * Math.pow(2, i);
+      const jitter = Math.floor(Math.random() * 50);
+      await sleep(backoff + jitter);
+    }
+  }
+  throw new Error('查询执行失败');
+}
+
+/**
  * 检查危险操作
  */
 function checkDangerousOperation(sql: string): string | null {
-  const trimmed = sql.trim().toLowerCase();
+  const normalized = stripQuotedContentAndComments(sql).trim().toLowerCase();
   
   // 检查 DELETE/UPDATE 没有 WHERE 子句
-  if ((trimmed.startsWith('delete') || trimmed.startsWith('update')) && !trimmed.includes('where')) {
+  const isDeleteOrUpdate = normalized.startsWith('delete') || normalized.startsWith('update');
+  const hasWhere = /\bwhere\b/.test(normalized);
+  if (isDeleteOrUpdate && !hasWhere) {
     return '危险操作：DELETE 或 UPDATE 语句缺少 WHERE 子句，拒绝执行';
   }
   
@@ -57,7 +148,11 @@ export async function executeQuery(
     }
 
     const pool = getPool();
-    const [result] = await pool.execute(sql, params);
+    const { queryTimeout, maxRows } = getRuntimeConfig();
+    const [result] = await executeWithRetry<[unknown, unknown]>(
+      () => withTimeout(pool.execute(sql, params) as Promise<[unknown, unknown]>, queryTimeout),
+      isReadOnlyQuery(sql)
+    );
     const executionTime = Date.now() - startTime;
 
     // 判断结果类型
@@ -65,7 +160,9 @@ export async function executeQuery(
       // SELECT 查询结果
       return {
         success: true,
-        data: result as RowDataPacket[],
+        data: (result as RowDataPacket[]).slice(0, Math.max(1, maxRows)),
+        totalRows: (result as RowDataPacket[]).length,
+        truncated: (result as RowDataPacket[]).length > Math.max(1, maxRows),
         executionTime,
       };
     } else {
@@ -129,7 +226,6 @@ export async function executeBatch(
       const dangerCheck = checkDangerousOperation(sql);
       if (dangerCheck) {
         await conn.rollback();
-        conn.release();
         return {
           success: false,
           results,
@@ -141,12 +237,18 @@ export async function executeBatch(
       }
 
       try {
-        const [result] = await conn.execute(sql, params);
+        const { queryTimeout, maxRows } = getRuntimeConfig();
+        const [result] = await executeWithRetry<[unknown, unknown]>(
+          () => withTimeout(conn.execute(sql, params) as Promise<[unknown, unknown]>, queryTimeout),
+          isReadOnlyQuery(sql)
+        );
         
         if (Array.isArray(result)) {
           results.push({
             success: true,
-            data: result as RowDataPacket[],
+            data: (result as RowDataPacket[]).slice(0, Math.max(1, maxRows)),
+            totalRows: (result as RowDataPacket[]).length,
+            truncated: (result as RowDataPacket[]).length > Math.max(1, maxRows),
           });
         } else {
           const header = result as ResultSetHeader;
@@ -168,7 +270,6 @@ export async function executeBatch(
         errorCount++;
         // 出错时回滚事务
         await conn.rollback();
-        conn.release();
         return {
           success: false,
           results,
@@ -284,7 +385,15 @@ export async function showIndexes(table: string): Promise<QueryResult> {
     };
   }
 
-  return executeQuery(`SHOW INDEX FROM \`${table}\``);
+  const validationError = validateIdentifier(table, '表名');
+  if (validationError) {
+    return {
+      success: false,
+      error: validationError,
+    };
+  }
+
+  return executeQuery(`SHOW INDEX FROM ${escapeIdentifier(table)}`);
 }
 
 /**
@@ -298,5 +407,13 @@ export async function showCreateTable(table: string): Promise<QueryResult> {
     };
   }
 
-  return executeQuery(`SHOW CREATE TABLE \`${table}\``);
+  const validationError = validateIdentifier(table, '表名');
+  if (validationError) {
+    return {
+      success: false,
+      error: validationError,
+    };
+  }
+
+  return executeQuery(`SHOW CREATE TABLE ${escapeIdentifier(table)}`);
 }

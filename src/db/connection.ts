@@ -23,6 +23,10 @@ export function getConfigFromEnv(): DatabaseConfig {
     connectionLimit: parseInt(process.env.MYSQL_CONNECTION_LIMIT || '10', 10),
     queueLimit: parseInt(process.env.MYSQL_QUEUE_LIMIT || '0', 10),
     timeout: parseInt(process.env.MYSQL_TIMEOUT || '60000', 10),
+    queryTimeout: parseInt(process.env.MYSQL_QUERY_TIMEOUT || '30000', 10),
+    retryCount: parseInt(process.env.MYSQL_RETRY_COUNT || '2', 10),
+    retryDelayMs: parseInt(process.env.MYSQL_RETRY_DELAY_MS || '200', 10),
+    maxRows: parseInt(process.env.MYSQL_MAX_ROWS || '1000', 10),
     ssl: sslCa || sslCert || sslKey ? {
       ca: sslCa,
       cert: sslCert,
@@ -87,8 +91,24 @@ export async function testConnection(): Promise<boolean> {
     await conn.query('SELECT 1');
     conn.release();
     return true;
-  } catch (error) {
+  } catch (_error) {
     return false;
+  }
+}
+
+export async function testConnectionWithDetails(): Promise<{ success: boolean; error?: string; code?: string }> {
+  try {
+    const conn = await getConnection();
+    await conn.query('SELECT 1');
+    conn.release();
+    return { success: true };
+  } catch (error) {
+    const err = error as { message?: string; code?: string };
+    return {
+      success: false,
+      error: err?.message || '未知连接错误',
+      code: err?.code,
+    };
   }
 }
 

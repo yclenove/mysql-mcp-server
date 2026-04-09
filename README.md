@@ -4,6 +4,17 @@
 
 一个基于 Node.js 的 MySQL MCP (Model Context Protocol) 服务器，支持通过 MCP 协议操作 MySQL 数据库。
 
+## 快速开始（1 分钟）
+
+```bash
+npm install
+cp .env.example .env
+npm run build
+npm start
+```
+
+默认启动后会从当前工作目录加载 `.env`，并在 stderr 输出连接信息。
+
 ## 功能特性
 
 ### 查询类工具
@@ -137,6 +148,10 @@ MYSQL_DATABASE=test
 
 # 可选配置
 MYSQL_CONNECTION_LIMIT=10
+MYSQL_QUERY_TIMEOUT=30000   # 单条查询超时（毫秒）
+MYSQL_RETRY_COUNT=2         # 可重试错误重试次数
+MYSQL_RETRY_DELAY_MS=200    # 重试基础延时（毫秒，指数退避）
+MYSQL_MAX_ROWS=1000         # 单次返回最大行数（超出会截断）
 
 # 安全相关配置
 MYSQL_READONLY=false        # 启用只读模式（true/false）
@@ -357,8 +372,12 @@ npm run inspector
 2. **连接池**：默认连接池大小为 10，可通过 `MYSQL_CONNECTION_LIMIT` 调整
 
 3. **超时**：默认连接超时为 60 秒，可通过 `MYSQL_TIMEOUT` 调整
+4. **查询保护**：
+   - 单条查询支持 `MYSQL_QUERY_TIMEOUT` 超时保护
+   - 只读查询在瞬时错误下会自动退避重试
+   - 单次返回结果受 `MYSQL_MAX_ROWS` 限制，超出时返回 `truncated=true`
 
-4. **只读模式限制**：
+5. **只读模式限制**：
    - 只允许执行 `SELECT`、`SHOW`、`DESCRIBE`、`DESC`、`EXPLAIN` 语句
    - `batch_execute` 中的写入语句会被自动过滤
    - 修改类工具（insert/update/delete/execute）会直接返回错误

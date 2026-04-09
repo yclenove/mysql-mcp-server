@@ -6,6 +6,7 @@ import { registerQueryTools } from './tools/query.js';
 import { registerModifyTools } from './tools/modify.js';
 import { registerSchemaTools } from './tools/schema.js';
 import { registerBatchTools } from './tools/batch.js';
+import packageJson from '../package.json' with { type: 'json' };
 
 /**
  * 创建并配置 MCP Server
@@ -13,7 +14,7 @@ import { registerBatchTools } from './tools/batch.js';
 export function createServer(): McpServer {
   const server = new McpServer({
     name: 'mysql-mcp-server',
-    version: '1.0.0',
+    version: packageJson.version,
   });
 
   // 注册各类工具

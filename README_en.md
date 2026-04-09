@@ -4,6 +4,17 @@
 
 A Node.js-based MySQL MCP (Model Context Protocol) server that enables MySQL database operations through the MCP protocol.
 
+## Quick Start (1 minute)
+
+```bash
+npm install
+cp .env.example .env
+npm run build
+npm start
+```
+
+On startup, the server loads `.env` from the current working directory and logs runtime info to stderr.
+
 ## Features
 
 ### Query Tools
@@ -137,6 +148,10 @@ MYSQL_DATABASE=test
 
 # Optional configuration
 MYSQL_CONNECTION_LIMIT=10
+MYSQL_QUERY_TIMEOUT=30000   # Per-query timeout in milliseconds
+MYSQL_RETRY_COUNT=2         # Retry attempts for retriable read-only errors
+MYSQL_RETRY_DELAY_MS=200    # Base retry delay (ms, exponential backoff)
+MYSQL_MAX_ROWS=1000         # Max rows returned per query (truncated when exceeded)
 
 # Security-related configuration
 MYSQL_READONLY=false        # Enable read-only mode (true/false)
@@ -357,8 +372,12 @@ npm run inspector
 2. **Connection Pool**: Default connection pool size is 10, adjustable via `MYSQL_CONNECTION_LIMIT`
 
 3. **Timeout**: Default connection timeout is 60 seconds, adjustable via `MYSQL_TIMEOUT`
+4. **Query protection**:
+   - Per-query timeout via `MYSQL_QUERY_TIMEOUT`
+   - Automatic retry/backoff for retriable read-only failures
+   - Response row cap via `MYSQL_MAX_ROWS`; when exceeded, response includes `truncated=true`
 
-4. **Read-Only Mode Limitations**:
+5. **Read-Only Mode Limitations**:
    - Only allows execution of `SELECT`, `SHOW`, `DESCRIBE`, `DESC`, `EXPLAIN` statements
    - Write statements in `batch_execute` are automatically filtered
    - Modification tools (insert/update/delete/execute) return errors directly
