@@ -78,16 +78,15 @@ async function main() {
 
   log('Connected!');
 
-  // 创建 MCP Server
   const server = createServer();
-
-  // 创建 stdio 传输层
   const transport = new StdioServerTransport();
-
-  // 连接到传输层
   await server.connect(transport);
 
-  log('Ready');
+  log(
+    `Ready — Tools: ${Object.keys((server as any)._registeredTools || {}).length}, ` +
+      `Resources: ${Object.keys((server as any)._registeredResources || {}).length + Object.keys((server as any)._registeredResourceTemplates || {}).length}, ` +
+      `Prompts: ${Object.keys((server as any)._registeredPrompts || {}).length}`
+  );
 
   // 处理进程退出
   process.on('SIGINT', async () => {

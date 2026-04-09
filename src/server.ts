@@ -46,6 +46,7 @@ MySQL MCP Server 提供的工具列表：
 - insert: 执行 INSERT 插入
 - update: 执行 UPDATE 更新
 - delete: 执行 DELETE 删除
+- call_procedure: 调用存储过程
 
 【批量操作】
 - batch_execute: 批量执行 SQL（自动事务，失败回滚）
@@ -55,6 +56,7 @@ MySQL MCP Server 提供的工具列表：
 - create_table: 创建新表（只读模式下禁用）
 
 【元数据】
+- use_database: 切换数据库
 - show_databases: 列出所有数据库
 - list_tables: 列出表
 - describe_table: 获取表结构

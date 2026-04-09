@@ -10,7 +10,7 @@
 
 ## 特性
 
-- **13 个工具 + 4 个 Prompts** — 查询、增删改、DDL、批量、元数据、性能分析一应俱全
+- **15 个工具 + 4 个 Prompts** — 查询、增删改、DDL、存储过程、批量、元数据、性能分析一应俱全
 - **参数化查询** — 防止 SQL 注入攻击
 - **安全防护** — DELETE/UPDATE 必须带 WHERE，TRUNCATE/DROP/ALTER 自动拦截
 - **只读模式** — 一键开启，适合生产环境
@@ -88,9 +88,11 @@ npm start
 | `insert` | 执行 INSERT | `sql`, `params?` |
 | `update` | 执行 UPDATE（必须含 WHERE） | `sql`, `params?` |
 | `delete` | 执行 DELETE（必须含 WHERE） | `sql`, `params?` |
+| `call_procedure` | 调用存储过程 | `procedure`, `params?` |
 | `create_table` | 创建新表（只读模式下禁用） | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
 | `batch_execute` | 批量执行 SQL（自动事务），最多 50 条 | `statements[]` |
 | `batch_insert` | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]` |
+| `use_database` | 切换当前数据库 | `database` |
 | `show_databases` | 列出所有数据库 | 无 |
 | `list_tables` | 列出表及其信息 | `database?` |
 | `describe_table` | 获取表字段结构 | `table` |

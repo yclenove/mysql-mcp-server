@@ -10,7 +10,7 @@ A MySQL database tool server based on MCP (Model Context Protocol), enabling AI 
 
 ## Features
 
-- **13 tools + 4 Prompts** — query, CRUD, DDL, batch, metadata, query analysis
+- **15 tools + 4 Prompts** — query, CRUD, DDL, stored procedures, batch, metadata, query analysis
 - **Parameterized queries** — prevents SQL injection attacks
 - **Safety guards** — DELETE/UPDATE require WHERE; TRUNCATE/DROP/ALTER auto-blocked
 - **Read-only mode** — one switch for production safety
@@ -88,9 +88,11 @@ npm start
 | `insert` | Execute INSERT | `sql`, `params?` |
 | `update` | Execute UPDATE (WHERE required) | `sql`, `params?` |
 | `delete` | Execute DELETE (WHERE required) | `sql`, `params?` |
+| `call_procedure` | Call a stored procedure | `procedure`, `params?` |
 | `create_table` | Create a new table (disabled in read-only mode) | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
 | `batch_execute` | Batch SQL execution (auto-transaction), max 50 | `statements[]` |
 | `batch_insert` | Batch insert records (multi-row VALUES, auto-transaction), max 50 | `table`, `records[]` |
+| `use_database` | Switch current database | `database` |
 | `show_databases` | List all databases | none |
 | `list_tables` | List tables with info | `database?` |
 | `describe_table` | Get table column structure | `table` |

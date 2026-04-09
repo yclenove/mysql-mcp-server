@@ -9,12 +9,52 @@ import {
   describeTable,
   showIndexes,
   showCreateTable,
+  validateIdentifier,
 } from '../db/executor.js';
+import { getPool } from '../db/connection.js';
+import { auditLog } from '../audit.js';
 
 /**
  * 注册元数据相关工具
  */
 export function registerSchemaTools(server: McpServer): void {
+  server.tool(
+    'use_database',
+    '切换当前使用的数据库',
+    {
+      database: z.string().describe('要切换到的数据库名'),
+    },
+    async ({ database }) => {
+      const err = validateIdentifier(database, '数据库名');
+      if (err) {
+        return {
+          content: [{ type: 'text', text: `错误：${err}` }],
+          isError: true,
+        };
+      }
+
+      const startTime = Date.now();
+      try {
+        const pool = getPool();
+        await pool.query(`USE \`${database}\``);
+        const executionTime = Date.now() - startTime;
+        auditLog({ sql: `USE \`${database}\``, success: true, executionTime });
+        process.env.MYSQL_DATABASE = database;
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ database, switched: true }) }],
+        };
+      } catch (error) {
+        const executionTime = Date.now() - startTime;
+        const errorMsg = error instanceof Error ? error.message : '未知错误';
+        auditLog({ sql: `USE \`${database}\``, success: false, error: errorMsg, executionTime });
+        return {
+          content: [{ type: 'text', text: `切换失败：${errorMsg}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
   server.tool('show_databases', '列出所有数据库', {}, async () => {
     const result = await listDatabases();
 

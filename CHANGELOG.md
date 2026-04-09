@@ -4,7 +4,7 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [未发布]
+## [1.1.0] - 2026-04-09
 
 ### 变更
 
@@ -36,6 +36,11 @@
 - `query` 工具新增 `page`/`pageSize` 分页参数，自动生成 LIMIT/OFFSET
 - 新增查询审计日志功能，通过 `MCP_AUDIT_LOG` 环境变量指定日志文件路径
 - 新增连接池状态监控 Resource：`mysql://status/pool`
+- 新增 `use_database` 工具，运行时切换数据库
+- 新增 `call_procedure` 工具，支持调用存储过程
+- 版本升级至 1.1.0
+- publish 工作流添加单元测试步骤
+- 启动日志显示注册的工具数、Resources 数和 Prompts 数
 
 ### 优化
 
