@@ -10,6 +10,7 @@
 
 - README / README_en：说明 GitHub Actions 发布时 `NPM_TOKEN` 须使用 Granular（发布绕过 2FA）或 Classic **Automation** 令牌，避免 `EOTP`
 - `publish.yml`：文件顶部与发布步骤补充 NPM_TOKEN 配置说明
+- `publish.yml`：补充说明 `package.json` 的 `version` 须高于 npm 已发布版本，且打 tag 前需先 push 最新 `main`（避免 CI 仍用旧版号触发 `403 cannot publish over previously published versions`）
 
 ## [1.2.1] - 2026-04-09
 
