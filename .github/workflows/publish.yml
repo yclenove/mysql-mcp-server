@@ -7,6 +7,10 @@
 # - 或：Classic Token 中选类型「Automation」（专为 CI 设计，发布时可绕过 OTP）。
 # 勿使用普通 Publish token 且未勾选绕过项，否则 Actions 里无法输入认证器验证码。
 #
+# `package.json` 的 version 必须高于 npm 上已存在的版本，否则会报：
+#   403 You cannot publish over the previously published versions
+# 打 tag / 发 Release 前请先 push 最新 main，确保 CI 检出的是含新版本号的提交。
+#
 name: Publish to NPM
 
 env:
