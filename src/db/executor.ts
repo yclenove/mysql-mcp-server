@@ -152,6 +152,14 @@ export async function executeQuery(
   const startTime = Date.now();
 
   try {
+    const maxSqlLength = parseInt(process.env.MYSQL_MAX_SQL_LENGTH || '102400', 10);
+    if (sql.length > maxSqlLength) {
+      return {
+        success: false,
+        error: `SQL 语句超过长度限制（${maxSqlLength} 字符），请拆分或精简`,
+      };
+    }
+
     if (mode === ExecutionMode.READONLY && !isReadOnlyQuery(sql)) {
       return {
         success: false,
@@ -199,7 +207,7 @@ export async function executeQuery(
     }
   } catch (error) {
     const executionTime = Date.now() - startTime;
-    const errorMsg = error instanceof Error ? error.message : '未知错误';
+    const errorMsg = friendlyError(error);
     auditLog({ sql, params, success: false, error: errorMsg, executionTime });
     return {
       success: false,
@@ -207,6 +215,35 @@ export async function executeQuery(
       executionTime,
     };
   }
+}
+
+const MYSQL_ERROR_MAP: Record<string, string> = {
+  ER_NO_SUCH_TABLE: '表不存在',
+  ER_BAD_DB_ERROR: '数据库不存在',
+  ER_DUP_ENTRY: '唯一键冲突，记录已存在',
+  ER_ACCESS_DENIED_ERROR: '数据库访问被拒绝，请检查用户名和密码',
+  ER_DBACCESS_DENIED_ERROR: '无权访问该数据库',
+  ER_TABLE_EXISTS_ERROR: '表已存在',
+  ER_BAD_FIELD_ERROR: '字段名不存在',
+  ER_PARSE_ERROR: 'SQL 语法错误',
+  ER_NO_DEFAULT_FOR_FIELD: '字段缺少必填值',
+  ER_DATA_TOO_LONG: '数据超出字段长度限制',
+  ER_TRUNCATED_WRONG_VALUE: '数据类型不匹配',
+  ER_LOCK_DEADLOCK: '死锁，事务已回滚',
+  ER_LOCK_WAIT_TIMEOUT: '锁等待超时',
+  ECONNREFUSED: '无法连接数据库，连接被拒绝',
+  ENOTFOUND: '数据库主机地址无法解析',
+  ETIMEDOUT: '数据库连接超时',
+  PROTOCOL_CONNECTION_LOST: '数据库连接已断开',
+};
+
+function friendlyError(error: unknown): string {
+  const code = (error as { code?: string })?.code;
+  const raw = error instanceof Error ? error.message : '未知错误';
+  if (code && MYSQL_ERROR_MAP[code]) {
+    return `${MYSQL_ERROR_MAP[code]}（${code}：${raw}）`;
+  }
+  return raw;
 }
 
 /**

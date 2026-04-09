@@ -10,7 +10,7 @@
 
 ## 特性
 
-- **15 个工具 + 4 个 Prompts** — 查询、增删改、DDL、存储过程、批量、元数据、性能分析一应俱全
+- **16 个工具 + 4 个 Prompts** — 查询、增删改、DDL、存储过程、批量、元数据、连接诊断一应俱全
 - **参数化查询** — 防止 SQL 注入攻击
 - **安全防护** — DELETE/UPDATE 必须带 WHERE，TRUNCATE/DROP/ALTER 自动拦截
 - **只读模式** — 一键开启，适合生产环境
@@ -20,6 +20,8 @@
 - **MCP Prompts** — 预置 Prompts 引导 LLM 分析表结构、生成查询、优化性能
 - **审计日志** — 可选记录所有 SQL 执行到文件
 - **容器化支持** — 内置 Dockerfile，一行命令部署
+- **友好错误提示** — 常见 MySQL 错误码自动映射为中文诊断信息
+- **SQL 长度防护** — 默认 100KB 上限，防止超大 SQL 攻击
 - **查询超时与重试** — 可配置超时时间和自动重试策略
 - **SSL 支持** — 安全连接到远程数据库
 
@@ -34,7 +36,8 @@ MCP Server (server.ts)
     ├── Modify Tools ─────── insert, update, delete
     ├── DDL Tools ─────────── create_table
     ├── Batch Tools ──────── batch_execute, batch_insert
-    ├── Schema Tools ─────── show_databases, list_tables,
+    ├── Schema Tools ─────── test_connection, use_database,
+    │                         show_databases, list_tables,
     │                         describe_table, show_indexes,
     │                         show_create_table
     ├── Resources ─────────── schema/overview, schema/table/{name},
@@ -92,6 +95,7 @@ npm start
 | `create_table` | 创建新表（只读模式下禁用） | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
 | `batch_execute` | 批量执行 SQL（自动事务），最多 50 条 | `statements[]` |
 | `batch_insert` | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]` |
+| `test_connection` | 测试数据库连接状态和服务器版本 | 无 |
 | `use_database` | 切换当前数据库 | `database` |
 | `show_databases` | 列出所有数据库 | 无 |
 | `list_tables` | 列出表及其信息 | `database?` |
@@ -165,6 +169,7 @@ npm start
 | `MYSQL_SSL_CA` | - | SSL CA 证书路径 |
 | `MYSQL_SSL_CERT` | - | SSL 客户端证书路径 |
 | `MYSQL_SSL_KEY` | - | SSL 客户端密钥路径 |
+| `MYSQL_MAX_SQL_LENGTH` | 102400 | SQL 语句最大长度（字符），超出拒绝执行 |
 | `MCP_DEBUG` | false | 开启调试信息（返回 executionTime） |
 | `MCP_AUDIT_LOG` | - | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
 

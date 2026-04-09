@@ -11,13 +11,69 @@ import {
   showCreateTable,
   validateIdentifier,
 } from '../db/executor.js';
-import { getPool } from '../db/connection.js';
+import { getPool, testConnectionWithDetails } from '../db/connection.js';
 import { auditLog } from '../audit.js';
 
 /**
  * 注册元数据相关工具
  */
 export function registerSchemaTools(server: McpServer): void {
+  server.tool(
+    'test_connection',
+    '测试数据库连接是否正常，返回连接状态和服务器版本',
+    {},
+    async () => {
+      const startTime = Date.now();
+      const result = await testConnectionWithDetails();
+      const executionTime = Date.now() - startTime;
+
+      if (!result.success) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                connected: false,
+                error: result.error,
+                code: result.code,
+                latency: `${executionTime}ms`,
+              }),
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      try {
+        const pool = getPool();
+        const [rows] = await pool.query('SELECT VERSION() AS version');
+        const version = Array.isArray(rows) && rows.length > 0 ? (rows[0] as any).version : null;
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                connected: true,
+                version,
+                database: process.env.MYSQL_DATABASE || null,
+                latency: `${executionTime}ms`,
+              }),
+            },
+          ],
+        };
+      } catch {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ connected: true, latency: `${executionTime}ms` }),
+            },
+          ],
+        };
+      }
+    }
+  );
+
   server.tool(
     'use_database',
     '切换当前使用的数据库',

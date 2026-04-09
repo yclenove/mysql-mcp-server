@@ -10,7 +10,7 @@ A MySQL database tool server based on MCP (Model Context Protocol), enabling AI 
 
 ## Features
 
-- **15 tools + 4 Prompts** — query, CRUD, DDL, stored procedures, batch, metadata, query analysis
+- **16 tools + 4 Prompts** — query, CRUD, DDL, stored procedures, batch, metadata, connection diagnostics
 - **Parameterized queries** — prevents SQL injection attacks
 - **Safety guards** — DELETE/UPDATE require WHERE; TRUNCATE/DROP/ALTER auto-blocked
 - **Read-only mode** — one switch for production safety
@@ -20,6 +20,8 @@ A MySQL database tool server based on MCP (Model Context Protocol), enabling AI 
 - **MCP Prompts** — pre-built prompts for table analysis, query generation, and optimization
 - **Audit logging** — optional SQL execution logging to file
 - **Docker support** — built-in Dockerfile for one-command deployment
+- **Friendly error messages** — common MySQL error codes mapped to clear diagnostics
+- **SQL length protection** — 100KB default limit to prevent oversized SQL attacks
 - **Query timeout & retry** — configurable timeout and auto-retry strategy
 - **SSL support** — secure connections to remote databases
 
@@ -34,7 +36,8 @@ MCP Server (server.ts)
     ├── Modify Tools ─────── insert, update, delete
     ├── DDL Tools ─────────── create_table
     ├── Batch Tools ──────── batch_execute, batch_insert
-    ├── Schema Tools ─────── show_databases, list_tables,
+    ├── Schema Tools ─────── test_connection, use_database,
+    │                         show_databases, list_tables,
     │                         describe_table, show_indexes,
     │                         show_create_table
     ├── Resources ─────────── schema/overview, schema/table/{name},
@@ -92,6 +95,7 @@ npm start
 | `create_table` | Create a new table (disabled in read-only mode) | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
 | `batch_execute` | Batch SQL execution (auto-transaction), max 50 | `statements[]` |
 | `batch_insert` | Batch insert records (multi-row VALUES, auto-transaction), max 50 | `table`, `records[]` |
+| `test_connection` | Test database connection status and server version | none |
 | `use_database` | Switch current database | `database` |
 | `show_databases` | List all databases | none |
 | `list_tables` | List tables with info | `database?` |
@@ -165,6 +169,7 @@ Set `MYSQL_READONLY=true` for three-layer protection:
 | `MYSQL_SSL_CA` | - | SSL CA certificate path |
 | `MYSQL_SSL_CERT` | - | SSL client certificate path |
 | `MYSQL_SSL_KEY` | - | SSL client key path |
+| `MYSQL_MAX_SQL_LENGTH` | 102400 | Max SQL length (chars), rejects if exceeded |
 | `MCP_DEBUG` | false | Enable debug info (returns executionTime) |
 | `MCP_AUDIT_LOG` | - | Audit log file path (e.g. `./audit.log`), disabled if not set |
 

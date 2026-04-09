@@ -56,6 +56,7 @@ MySQL MCP Server 提供的工具列表：
 - create_table: 创建新表（只读模式下禁用）
 
 【元数据】
+- test_connection: 测试连接状态和服务器版本
 - use_database: 切换数据库
 - show_databases: 列出所有数据库
 - list_tables: 列出表

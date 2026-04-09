@@ -21,6 +21,11 @@ function init(): void {
   }
 }
 
+export function resetAudit(): void {
+  initialized = false;
+  logPath = null;
+}
+
 export function auditLog(entry: {
   sql: string;
   params?: any[];

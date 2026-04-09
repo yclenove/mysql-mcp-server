@@ -42,11 +42,16 @@
 - publish 工作流添加单元测试步骤
 - 启动日志显示注册的工具数、Resources 数和 Prompts 数
 - 新增审计日志单元测试（6 个用例），总计 36 个单元测试
+- 新增 `test_connection` 工具，快速诊断数据库连接状态和服务器版本
+- SQL 长度上限防护（默认 100KB），防止超大 SQL payload 攻击
+- 常见 MySQL 错误码映射为友好中文提示（ER_NO_SUCH_TABLE、ER_DUP_ENTRY 等 15 个错误码）
+- 审计模块新增 `resetAudit()` 导出函数，提升测试可靠性
 
 ### 优化
 
 - `batch_insert` 优化为多行 `INSERT INTO ... VALUES (...), (...), ...` 语法，减少 SQL 往返次数
 - 代码格式化（Prettier）修复 4 个文件格式问题
+- 单元测试 `closePool` 清理，修复测试进程无法退出的问题
 
 ## [1.0.1] - 2026-04-09
 
