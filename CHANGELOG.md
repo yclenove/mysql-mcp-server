@@ -6,6 +6,10 @@
 
 ## [1.2.2] - 2026-04-09
 
+### 优化
+
+- GitHub Actions：`ci.yml` / `publish.yml` 设置 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`，并将 `setup-node` 的 Node 版本改为 24，消除官方 Action 使用 Node 20 的弃用告警
+
 ### 文档
 
 - README / README_en：说明 GitHub Actions 发布时 `NPM_TOKEN` 须使用 Granular（发布绕过 2FA）或 Classic **Automation** 令牌，避免 `EOTP`
