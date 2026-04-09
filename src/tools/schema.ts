@@ -20,7 +20,7 @@ import { auditLog } from '../audit.js';
 export function registerSchemaTools(server: McpServer): void {
   server.tool(
     'test_connection',
-    '测试数据库连接是否正常，返回连接状态和服务器版本',
+    'Ping；返回 version/latency',
     {},
     async () => {
       const startTime = Date.now();
@@ -76,9 +76,9 @@ export function registerSchemaTools(server: McpServer): void {
 
   server.tool(
     'use_database',
-    '切换当前使用的数据库',
+    'USE 切换库',
     {
-      database: z.string().describe('要切换到的数据库名'),
+      database: z.string().describe('库名'),
     },
     async ({ database }) => {
       const err = validateIdentifier(database, '数据库名');
@@ -111,7 +111,7 @@ export function registerSchemaTools(server: McpServer): void {
     }
   );
 
-  server.tool('show_databases', '列出所有数据库', {}, async () => {
+  server.tool('show_databases', 'SHOW DATABASES', {}, async () => {
     const result = await listDatabases();
 
     if (!result.success) {
@@ -133,9 +133,9 @@ export function registerSchemaTools(server: McpServer): void {
 
   server.tool(
     'list_tables',
-    '列出指定数据库中的所有表',
+    '表列表+行数等元数据',
     {
-      database: z.string().optional().describe('数据库名，不指定则使用默认'),
+      database: z.string().optional().describe('库名，缺省用 MYSQL_DATABASE'),
     },
     async ({ database }) => {
       const result = await listTables(database);
@@ -155,7 +155,7 @@ export function registerSchemaTools(server: McpServer): void {
 
   server.tool(
     'describe_table',
-    '获取表的字段结构（名称、类型、主键等）',
+    '列结构（类型/主键/可空）',
     {
       table: z.string().describe('表名'),
     },
@@ -177,7 +177,7 @@ export function registerSchemaTools(server: McpServer): void {
 
   server.tool(
     'show_indexes',
-    '获取表的索引信息',
+    'SHOW INDEX',
     {
       table: z.string().describe('表名'),
     },
@@ -199,7 +199,7 @@ export function registerSchemaTools(server: McpServer): void {
 
   server.tool(
     'show_create_table',
-    '获取表的建表 SQL 语句',
+    'SHOW CREATE TABLE',
     {
       table: z.string().describe('表名'),
     },

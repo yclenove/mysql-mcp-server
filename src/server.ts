@@ -35,39 +35,11 @@ export function createServer(): McpServer {
  * 获取工具列表说明
  */
 export function getToolsDescription(): string {
-  return `
-MySQL MCP Server 提供的工具列表：
-
-【查询类】
-- query: 执行只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN）
-- explain_query: 分析 SQL 查询执行计划
-
-【修改类】
-- insert: 执行 INSERT 插入
-- update: 执行 UPDATE 更新
-- delete: 执行 DELETE 删除
-- call_procedure: 调用存储过程
-
-【批量操作】
-- batch_execute: 批量执行 SQL（自动事务，失败回滚）
-- batch_insert: 批量插入记录
-
-【DDL】
-- create_table: 创建新表（只读模式下禁用）
-
-【元数据】
-- test_connection: 测试连接状态和服务器版本
-- use_database: 切换数据库
-- show_databases: 列出所有数据库
-- list_tables: 列出表
-- describe_table: 获取表结构
-- show_indexes: 获取表索引
-- show_create_table: 获取建表语句
-
-【安全特性】
-- 参数化查询防 SQL 注入
-- DELETE/UPDATE 必须包含 WHERE
-- TRUNCATE/DROP/ALTER 拒绝执行
-- 只读模式（MYSQL_READONLY=true）
-`;
+  return `MySQL MCP 工具（短览）：
+查询: query(只读+?参数+limit/page) explain_query(SELECT计划)
+写入: insert update delete(须WHERE) call_procedure
+批量: batch_execute batch_insert(事务 ≤50)
+DDL: create_table(只读禁)
+元数据: test_connection use_database show_databases list_tables describe_table show_indexes show_create_table
+安全: 参数化; DELETE/UPDATE须WHERE; 拒 TRUNCATE/DROP/ALTER; MYSQL_READONLY`;
 }

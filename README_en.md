@@ -84,42 +84,42 @@ npm start
 
 ## Tool API
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `query` | Read-only queries (SELECT/SHOW/DESCRIBE/EXPLAIN) | `sql`, `params?`, `limit?`, `page?`, `pageSize?` |
-| `explain_query` | Analyze SQL query execution plan | `sql` |
-| `insert` | Execute INSERT | `sql`, `params?` |
-| `update` | Execute UPDATE (WHERE required) | `sql`, `params?` |
-| `delete` | Execute DELETE (WHERE required) | `sql`, `params?` |
-| `call_procedure` | Call a stored procedure | `procedure`, `params?` |
-| `create_table` | Create a new table (disabled in read-only mode) | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
-| `batch_execute` | Batch SQL execution (auto-transaction), max 50 | `statements[]` |
-| `batch_insert` | Batch insert records (multi-row VALUES, auto-transaction), max 50 | `table`, `records[]` |
-| `test_connection` | Test database connection status and server version | none |
-| `use_database` | Switch current database | `database` |
-| `show_databases` | List all databases | none |
-| `list_tables` | List tables with info | `database?` |
-| `describe_table` | Get table column structure | `table` |
-| `show_indexes` | Get table indexes | `table` |
-| `show_create_table` | Get CREATE TABLE SQL | `table` |
+| Tool                | Description                                                       | Parameters                                              |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------------------------------- |
+| `query`             | Read-only queries (SELECT/SHOW/DESCRIBE/EXPLAIN)                  | `sql`, `params?`, `limit?`, `page?`, `pageSize?`        |
+| `explain_query`     | Analyze SQL query execution plan                                  | `sql`                                                   |
+| `insert`            | Execute INSERT                                                    | `sql`, `params?`                                        |
+| `update`            | Execute UPDATE (WHERE required)                                   | `sql`, `params?`                                        |
+| `delete`            | Execute DELETE (WHERE required)                                   | `sql`, `params?`                                        |
+| `call_procedure`    | Call a stored procedure                                           | `procedure`, `params?`                                  |
+| `create_table`      | Create a new table (disabled in read-only mode)                   | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
+| `batch_execute`     | Batch SQL execution (auto-transaction), max 50                    | `statements[]`                                          |
+| `batch_insert`      | Batch insert records (multi-row VALUES, auto-transaction), max 50 | `table`, `records[]`                                    |
+| `test_connection`   | Test database connection status and server version                | none                                                    |
+| `use_database`      | Switch current database                                           | `database`                                              |
+| `show_databases`    | List all databases                                                | none                                                    |
+| `list_tables`       | List tables with info                                             | `database?`                                             |
+| `describe_table`    | Get table column structure                                        | `table`                                                 |
+| `show_indexes`      | Get table indexes                                                 | `table`                                                 |
+| `show_create_table` | Get CREATE TABLE SQL                                              | `table`                                                 |
 
 ### MCP Resources
 
-| Resource URI | Description |
-|--------------|-------------|
-| `mysql://schema/overview` | Overview of all tables and columns in the current database |
-| `mysql://schema/table/{tableName}` | Detailed column structure for a specific table |
-| `mysql://databases` | List of all databases |
-| `mysql://status/pool` | Connection pool status (active/idle connections, queue) |
+| Resource URI                       | Description                                                                |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `mysql://schema/overview`          | Tables and columns (no column comments; use `describe_table` for comments) |
+| `mysql://schema/table/{tableName}` | Single-table column structure (JSON)                                       |
+| `mysql://databases`                | Database names as a JSON array                                             |
+| `mysql://status/pool`              | Pool queue and connection counts                                           |
 
 ### MCP Prompts
 
-| Prompt | Description | Arguments |
-|--------|-------------|-----------|
-| `analyze-table` | Analyze table structure, indexes, and provide optimization suggestions | `table` |
-| `generate-query` | Generate SQL queries from natural language descriptions | `description`, `tables?` |
-| `optimize-query` | Analyze and optimize SQL query performance | `sql` |
-| `data-overview` | Quick overview of database contents and table relationships | none |
+| Prompt           | Description                                                | Arguments                |
+| ---------------- | ---------------------------------------------------------- | ------------------------ |
+| `analyze-table`  | Structure, indexes, row count analysis and tuning hints    | `table`                  |
+| `generate-query` | Natural language → parameterized SELECT + run with `query` | `description`, `tables?` |
+| `optimize-query` | EXPLAIN + index review + rewrite suggestions               | `sql`                    |
+| `data-overview`  | Database-level: table list, row counts, sample rows        | none                     |
 
 ## Security
 
@@ -133,12 +133,12 @@ All tools use parameterized queries to prevent SQL injection:
 
 ### Dangerous Operation Interception
 
-| Operation | Rule |
-|-----------|------|
+| Operation       | Rule                  |
+| --------------- | --------------------- |
 | DELETE / UPDATE | WHERE clause required |
-| TRUNCATE | Always blocked |
-| DROP | Always blocked |
-| ALTER | Always blocked |
+| TRUNCATE        | Always blocked        |
+| DROP            | Always blocked        |
+| ALTER           | Always blocked        |
 
 ### Read-Only Mode
 
@@ -152,26 +152,26 @@ Set `MYSQL_READONLY=true` for three-layer protection:
 
 ### Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MYSQL_HOST` | localhost | MySQL host |
-| `MYSQL_PORT` | 3306 | Port |
-| `MYSQL_USER` | root | Username |
-| `MYSQL_PASSWORD` | - | Password |
-| `MYSQL_DATABASE` | - | Default database |
-| `MYSQL_READONLY` | false | Read-only mode |
-| `MYSQL_MAX_ROWS` | 100 | Max rows per query |
-| `MYSQL_QUERY_TIMEOUT` | 30000 | Query timeout (ms) |
-| `MYSQL_RETRY_COUNT` | 2 | Read-only query retry count |
-| `MYSQL_RETRY_DELAY_MS` | 200 | Base retry delay (exponential backoff) |
-| `MYSQL_CONNECTION_LIMIT` | 10 | Connection pool size |
-| `MYSQL_TIMEOUT` | 60000 | Connection timeout (ms) |
-| `MYSQL_SSL_CA` | - | SSL CA certificate path |
-| `MYSQL_SSL_CERT` | - | SSL client certificate path |
-| `MYSQL_SSL_KEY` | - | SSL client key path |
-| `MYSQL_MAX_SQL_LENGTH` | 102400 | Max SQL length (chars), rejects if exceeded |
-| `MCP_DEBUG` | false | Enable debug info (returns executionTime) |
-| `MCP_AUDIT_LOG` | - | Audit log file path (e.g. `./audit.log`), disabled if not set |
+| Variable                 | Default   | Description                                                   |
+| ------------------------ | --------- | ------------------------------------------------------------- |
+| `MYSQL_HOST`             | localhost | MySQL host                                                    |
+| `MYSQL_PORT`             | 3306      | Port                                                          |
+| `MYSQL_USER`             | root      | Username                                                      |
+| `MYSQL_PASSWORD`         | -         | Password                                                      |
+| `MYSQL_DATABASE`         | -         | Default database                                              |
+| `MYSQL_READONLY`         | false     | Read-only mode                                                |
+| `MYSQL_MAX_ROWS`         | 100       | Max rows per query                                            |
+| `MYSQL_QUERY_TIMEOUT`    | 30000     | Query timeout (ms)                                            |
+| `MYSQL_RETRY_COUNT`      | 2         | Read-only query retry count                                   |
+| `MYSQL_RETRY_DELAY_MS`   | 200       | Base retry delay (exponential backoff)                        |
+| `MYSQL_CONNECTION_LIMIT` | 10        | Connection pool size                                          |
+| `MYSQL_TIMEOUT`          | 60000     | Connection timeout (ms)                                       |
+| `MYSQL_SSL_CA`           | -         | SSL CA certificate path                                       |
+| `MYSQL_SSL_CERT`         | -         | SSL client certificate path                                   |
+| `MYSQL_SSL_KEY`          | -         | SSL client key path                                           |
+| `MYSQL_MAX_SQL_LENGTH`   | 102400    | Max SQL length (chars), rejects if exceeded                   |
+| `MCP_DEBUG`              | false     | Enable debug info (returns executionTime)                     |
+| `MCP_AUDIT_LOG`          | -         | Audit log file path (e.g. `./audit.log`), disabled if not set |
 
 ### MCP Client Configuration
 
@@ -223,6 +223,8 @@ Add MCP server in Cursor settings with command `npx -y @wenit/mysql-mcp-server` 
 
 ## Development
 
+Before changing MCP tools/resources/prompts, read [`AGENTS.md`](./AGENTS.md) (**token economy** and authoring notes).
+
 ### Project Structure
 
 ```
@@ -244,7 +246,9 @@ src/
 └── types/
     └── index.ts       # TypeScript type definitions
 test/
-└── executor.test.mjs  # Unit tests
+├── executor.test.mjs  # Unit tests (executor)
+└── audit.test.mjs     # Audit log tests
+AGENTS.md              # AI collaboration & MCP token guidelines
 Dockerfile             # Container deployment
 ```
 

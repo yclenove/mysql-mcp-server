@@ -46,10 +46,10 @@ function formatWriteResult(result: {
 export function registerModifyTools(server: McpServer): void {
   server.tool(
     'insert',
-    '执行 INSERT 语句，支持参数化查询',
+    'INSERT；? 参数',
     {
-      sql: z.string().describe('INSERT SQL 语句'),
-      params: z.array(z.any()).optional().describe('参数'),
+      sql: z.string().describe('INSERT SQL'),
+      params: z.array(z.any()).optional().describe('? 绑定值'),
     },
     async ({ sql, params = [] }) => {
       const readOnlyCheck = checkReadOnly();
@@ -85,10 +85,10 @@ export function registerModifyTools(server: McpServer): void {
 
   server.tool(
     'update',
-    '执行 UPDATE 语句（必须包含 WHERE），支持参数化查询',
+    'UPDATE，须含 WHERE；? 参数',
     {
-      sql: z.string().describe('UPDATE SQL 语句'),
-      params: z.array(z.any()).optional().describe('参数'),
+      sql: z.string().describe('UPDATE SQL'),
+      params: z.array(z.any()).optional().describe('? 绑定值'),
     },
     async ({ sql, params = [] }) => {
       const readOnlyCheck = checkReadOnly();
@@ -124,10 +124,10 @@ export function registerModifyTools(server: McpServer): void {
 
   server.tool(
     'delete',
-    '执行 DELETE 语句（必须包含 WHERE），支持参数化查询',
+    'DELETE，须含 WHERE；? 参数',
     {
-      sql: z.string().describe('DELETE SQL 语句'),
-      params: z.array(z.any()).optional().describe('参数'),
+      sql: z.string().describe('DELETE SQL'),
+      params: z.array(z.any()).optional().describe('? 绑定值'),
     },
     async ({ sql, params = [] }) => {
       const readOnlyCheck = checkReadOnly();
@@ -163,10 +163,10 @@ export function registerModifyTools(server: McpServer): void {
 
   server.tool(
     'call_procedure',
-    '调用存储过程',
+    'CALL 存储过程；? 参数',
     {
-      procedure: z.string().describe('存储过程名称'),
-      params: z.array(z.any()).optional().describe('存储过程参数'),
+      procedure: z.string().describe('过程名'),
+      params: z.array(z.any()).optional().describe('实参'),
     },
     async ({ procedure, params = [] }) => {
       const readOnlyCheck = checkReadOnly();

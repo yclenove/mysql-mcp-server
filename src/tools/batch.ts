@@ -20,17 +20,17 @@ const MAX_BATCH_SIZE = 50;
 export function registerBatchTools(server: McpServer): void {
   server.tool(
     'batch_execute',
-    `批量执行多条 SQL（自动事务，失败回滚），最多 ${MAX_BATCH_SIZE} 条`,
+    `事务批量 SQL，失败回滚，≤${MAX_BATCH_SIZE} 条`,
     {
       statements: z
         .array(
           z.object({
-            sql: z.string().describe('SQL 语句'),
-            params: z.array(z.any()).optional().describe('参数'),
+            sql: z.string().describe('SQL'),
+            params: z.array(z.any()).optional().describe('? 绑定值'),
           })
         )
         .max(MAX_BATCH_SIZE)
-        .describe('SQL 语句列表'),
+        .describe('语句数组'),
     },
     async ({ statements }) => {
       if (!statements || statements.length === 0) {
@@ -121,13 +121,13 @@ export function registerBatchTools(server: McpServer): void {
 
   server.tool(
     'batch_insert',
-    `批量插入记录（自动事务，失败回滚），最多 ${MAX_BATCH_SIZE} 条`,
+    `多行 INSERT，事务，≤${MAX_BATCH_SIZE} 行`,
     {
       table: z.string().describe('表名'),
       records: z
         .array(z.record(z.string(), z.any()))
         .max(MAX_BATCH_SIZE)
-        .describe('记录对象数组，key 为字段名'),
+        .describe('对象数组，键为列名'),
     },
     async ({ table, records }) => {
       if (isReadOnly()) {

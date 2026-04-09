@@ -10,25 +10,25 @@ import { auditLog } from '../audit.js';
 export function registerDDLTools(server: McpServer): void {
   server.tool(
     'create_table',
-    '创建新表（只读模式下禁用）',
+    'CREATE TABLE；只读禁',
     {
       table: z.string().describe('表名'),
       columns: z
         .array(
           z.object({
-            name: z.string().describe('字段名'),
-            type: z.string().describe('字段类型，如 INT、VARCHAR(255)、TEXT'),
-            primaryKey: z.boolean().optional().describe('是否为主键'),
-            autoIncrement: z.boolean().optional().describe('是否自增'),
-            nullable: z.boolean().optional().describe('是否允许 NULL，默认 true'),
-            defaultValue: z.string().optional().describe('默认值'),
-            comment: z.string().optional().describe('字段注释'),
+            name: z.string().describe('列名'),
+            type: z.string().describe('类型如 INT/VARCHAR(255)'),
+            primaryKey: z.boolean().optional().describe('主键'),
+            autoIncrement: z.boolean().optional().describe('自增'),
+            nullable: z.boolean().optional().describe('可 NULL，默认 true'),
+            defaultValue: z.string().optional().describe('DEFAULT 片段'),
+            comment: z.string().optional().describe('列注释'),
           })
         )
         .min(1)
-        .describe('字段定义列表'),
+        .describe('列定义'),
       comment: z.string().optional().describe('表注释'),
-      engine: z.string().optional().describe('存储引擎，默认 InnoDB'),
+      engine: z.string().optional().describe('引擎，默认 InnoDB'),
       charset: z.string().optional().describe('字符集，默认 utf8mb4'),
     },
     async ({ table, columns, comment, engine, charset }) => {

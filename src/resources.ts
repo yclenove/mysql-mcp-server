@@ -13,7 +13,7 @@ export function registerResources(server: McpServer): void {
   server.resource(
     'schema-overview',
     'mysql://schema/overview',
-    { description: '当前数据库的所有表及其结构概览' },
+    { description: '当前库：表与列（无列注释，需注释用 describe_table）' },
     async () => {
       const tablesResult = await listTables();
       if (!tablesResult.success || !tablesResult.data) {
@@ -39,10 +39,9 @@ export function registerResources(server: McpServer): void {
         if (cols.success && cols.data) {
           const colList = cols.data
             .map((c: any) => {
-              const pk = c.isPrimaryKey === 1 ? ' [PK]' : '';
-              const ai = c.isAutoIncrement === 1 ? ' AUTO_INCREMENT' : '';
-              const comment = c.comment ? ` -- ${c.comment}` : '';
-              return `  ${c.name} ${c.type}${pk}${ai}${comment}`;
+              const pk = c.isPrimaryKey === 1 ? ' PK' : '';
+              const ai = c.isAutoIncrement === 1 ? ' AI' : '';
+              return `  ${c.name} ${c.type}${pk}${ai}`;
             })
             .join('\n');
           sections.push(`表 ${tableName}:\n${colList}`);
@@ -64,7 +63,7 @@ export function registerResources(server: McpServer): void {
   server.resource(
     'table-schema',
     new ResourceTemplate('mysql://schema/table/{tableName}', { list: undefined }),
-    { description: '指定表的详细结构' },
+    { description: '单表列 JSON' },
     async (uri, { tableName }) => {
       const table = Array.isArray(tableName) ? tableName[0] : tableName;
       if (!table) {
@@ -107,7 +106,7 @@ export function registerResources(server: McpServer): void {
   server.resource(
     'pool-status',
     'mysql://status/pool',
-    { description: '连接池状态：活跃连接、空闲连接、等待队列' },
+    { description: '连接池队列/连接数' },
     async () => {
       try {
         const pool = getPool();
@@ -143,7 +142,7 @@ export function registerResources(server: McpServer): void {
     }
   );
 
-  server.resource('databases', 'mysql://databases', { description: '所有数据库列表' }, async () => {
+  server.resource('databases', 'mysql://databases', { description: '库名 JSON 数组' }, async () => {
     const result = await listDatabases();
     if (!result.success) {
       return {

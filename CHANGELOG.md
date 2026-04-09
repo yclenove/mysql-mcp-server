@@ -4,6 +4,19 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.1] - 2026-04-09
+
+### 新增
+
+- 根目录 `AGENTS.md`：约定修改 MCP 时须兼顾 LLM token 节约（`.cursor/rules/mcp-token-economy.mdc` 为本地同名补充）
+
+### 优化
+
+- 压缩全部 Tools / Prompts 的注册描述与 Zod 字段说明，降低 `list_tools` 等场景的 token 占用
+- `getToolsDescription` 改为极简短览
+- MCP Resources：`schema/overview` 正文去掉列注释行以减小大库体积；各 resource 的 `description` 缩短
+- `project-conventions.mdc` 增加 MCP/token 指引条目
+
 ## [1.1.0] - 2026-04-09
 
 ### 变更

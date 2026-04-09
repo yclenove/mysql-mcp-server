@@ -84,42 +84,42 @@ npm start
 
 ## 工具 API
 
-| 工具 | 说明 | 参数 |
-|------|------|------|
-| `query` | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN） | `sql`, `params?`, `limit?`, `page?`, `pageSize?` |
-| `explain_query` | 分析 SQL 查询执行计划 | `sql` |
-| `insert` | 执行 INSERT | `sql`, `params?` |
-| `update` | 执行 UPDATE（必须含 WHERE） | `sql`, `params?` |
-| `delete` | 执行 DELETE（必须含 WHERE） | `sql`, `params?` |
-| `call_procedure` | 调用存储过程 | `procedure`, `params?` |
-| `create_table` | 创建新表（只读模式下禁用） | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
-| `batch_execute` | 批量执行 SQL（自动事务），最多 50 条 | `statements[]` |
-| `batch_insert` | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]` |
-| `test_connection` | 测试数据库连接状态和服务器版本 | 无 |
-| `use_database` | 切换当前数据库 | `database` |
-| `show_databases` | 列出所有数据库 | 无 |
-| `list_tables` | 列出表及其信息 | `database?` |
-| `describe_table` | 获取表字段结构 | `table` |
-| `show_indexes` | 获取表索引 | `table` |
-| `show_create_table` | 获取建表 SQL | `table` |
+| 工具                | 说明                                              | 参数                                                    |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------- |
+| `query`             | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN）          | `sql`, `params?`, `limit?`, `page?`, `pageSize?`        |
+| `explain_query`     | 分析 SQL 查询执行计划                             | `sql`                                                   |
+| `insert`            | 执行 INSERT                                       | `sql`, `params?`                                        |
+| `update`            | 执行 UPDATE（必须含 WHERE）                       | `sql`, `params?`                                        |
+| `delete`            | 执行 DELETE（必须含 WHERE）                       | `sql`, `params?`                                        |
+| `call_procedure`    | 调用存储过程                                      | `procedure`, `params?`                                  |
+| `create_table`      | 创建新表（只读模式下禁用）                        | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
+| `batch_execute`     | 批量执行 SQL（自动事务），最多 50 条              | `statements[]`                                          |
+| `batch_insert`      | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]`                                    |
+| `test_connection`   | 测试数据库连接状态和服务器版本                    | 无                                                      |
+| `use_database`      | 切换当前数据库                                    | `database`                                              |
+| `show_databases`    | 列出所有数据库                                    | 无                                                      |
+| `list_tables`       | 列出表及其信息                                    | `database?`                                             |
+| `describe_table`    | 获取表字段结构                                    | `table`                                                 |
+| `show_indexes`      | 获取表索引                                        | `table`                                                 |
+| `show_create_table` | 获取建表 SQL                                      | `table`                                                 |
 
 ### MCP Resources
 
-| 资源 URI | 说明 |
-|----------|------|
-| `mysql://schema/overview` | 当前数据库所有表及其字段结构概览 |
-| `mysql://schema/table/{tableName}` | 指定表的详细字段结构 |
-| `mysql://databases` | 所有数据库列表 |
-| `mysql://status/pool` | 连接池状态（活跃/空闲连接、等待队列） |
+| 资源 URI                           | 说明                                                  |
+| ---------------------------------- | ----------------------------------------------------- |
+| `mysql://schema/overview`          | 当前库表与列（无列注释，需注释请用 `describe_table`） |
+| `mysql://schema/table/{tableName}` | 单表列结构（JSON）                                    |
+| `mysql://databases`                | 库名 JSON 数组                                        |
+| `mysql://status/pool`              | 连接池队列与连接数                                    |
 
 ### MCP Prompts
 
-| Prompt | 说明 | 参数 |
-|--------|------|------|
-| `analyze-table` | 分析表结构、索引，给出优化建议 | `table` |
-| `generate-query` | 根据自然语言描述生成 SQL 查询 | `description`, `tables?` |
-| `optimize-query` | 分析并优化 SQL 查询性能 | `sql` |
-| `data-overview` | 快速概览数据库内容和表关系 | 无 |
+| Prompt           | 说明                                    | 参数                     |
+| ---------------- | --------------------------------------- | ------------------------ |
+| `analyze-table`  | 表结构/索引/行数分析与优化建议          | `table`                  |
+| `generate-query` | 自然语言 → 参数化 SELECT + `query` 执行 | `description`, `tables?` |
+| `optimize-query` | EXPLAIN + 索引检查 + 改写建议           | `sql`                    |
+| `data-overview`  | 库级：表清单、行数、抽样行              | 无                       |
 
 ## 安全特性
 
@@ -133,12 +133,12 @@ npm start
 
 ### 危险操作拦截
 
-| 操作 | 拦截规则 |
-|------|----------|
+| 操作            | 拦截规则            |
+| --------------- | ------------------- |
 | DELETE / UPDATE | 必须包含 WHERE 子句 |
-| TRUNCATE | 始终拦截 |
-| DROP | 始终拦截 |
-| ALTER | 始终拦截 |
+| TRUNCATE        | 始终拦截            |
+| DROP            | 始终拦截            |
+| ALTER           | 始终拦截            |
 
 ### 只读模式
 
@@ -152,26 +152,26 @@ npm start
 
 ### 环境变量
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `MYSQL_HOST` | localhost | MySQL 主机 |
-| `MYSQL_PORT` | 3306 | 端口 |
-| `MYSQL_USER` | root | 用户名 |
-| `MYSQL_PASSWORD` | - | 密码 |
-| `MYSQL_DATABASE` | - | 默认数据库 |
-| `MYSQL_READONLY` | false | 只读模式 |
-| `MYSQL_MAX_ROWS` | 100 | 单次返回最大行数 |
-| `MYSQL_QUERY_TIMEOUT` | 30000 | 查询超时（毫秒） |
-| `MYSQL_RETRY_COUNT` | 2 | 只读查询重试次数 |
-| `MYSQL_RETRY_DELAY_MS` | 200 | 重试基础延时（指数退避） |
-| `MYSQL_CONNECTION_LIMIT` | 10 | 连接池大小 |
-| `MYSQL_TIMEOUT` | 60000 | 连接超时（毫秒） |
-| `MYSQL_SSL_CA` | - | SSL CA 证书路径 |
-| `MYSQL_SSL_CERT` | - | SSL 客户端证书路径 |
-| `MYSQL_SSL_KEY` | - | SSL 客户端密钥路径 |
-| `MYSQL_MAX_SQL_LENGTH` | 102400 | SQL 语句最大长度（字符），超出拒绝执行 |
-| `MCP_DEBUG` | false | 开启调试信息（返回 executionTime） |
-| `MCP_AUDIT_LOG` | - | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
+| 变量                     | 默认值    | 说明                                                 |
+| ------------------------ | --------- | ---------------------------------------------------- |
+| `MYSQL_HOST`             | localhost | MySQL 主机                                           |
+| `MYSQL_PORT`             | 3306      | 端口                                                 |
+| `MYSQL_USER`             | root      | 用户名                                               |
+| `MYSQL_PASSWORD`         | -         | 密码                                                 |
+| `MYSQL_DATABASE`         | -         | 默认数据库                                           |
+| `MYSQL_READONLY`         | false     | 只读模式                                             |
+| `MYSQL_MAX_ROWS`         | 100       | 单次返回最大行数                                     |
+| `MYSQL_QUERY_TIMEOUT`    | 30000     | 查询超时（毫秒）                                     |
+| `MYSQL_RETRY_COUNT`      | 2         | 只读查询重试次数                                     |
+| `MYSQL_RETRY_DELAY_MS`   | 200       | 重试基础延时（指数退避）                             |
+| `MYSQL_CONNECTION_LIMIT` | 10        | 连接池大小                                           |
+| `MYSQL_TIMEOUT`          | 60000     | 连接超时（毫秒）                                     |
+| `MYSQL_SSL_CA`           | -         | SSL CA 证书路径                                      |
+| `MYSQL_SSL_CERT`         | -         | SSL 客户端证书路径                                   |
+| `MYSQL_SSL_KEY`          | -         | SSL 客户端密钥路径                                   |
+| `MYSQL_MAX_SQL_LENGTH`   | 102400    | SQL 语句最大长度（字符），超出拒绝执行               |
+| `MCP_DEBUG`              | false     | 开启调试信息（返回 executionTime）                   |
+| `MCP_AUDIT_LOG`          | -         | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
 
 ### MCP 客户端配置
 
@@ -223,6 +223,8 @@ npm start
 
 ## 开发
 
+维护或扩展 MCP 工具/资源/Prompts 前请阅读根目录 [`AGENTS.md`](./AGENTS.md)（**token 节约**与描述约定）。
+
 ### 项目结构
 
 ```
@@ -244,7 +246,9 @@ src/
 └── types/
     └── index.ts       # TypeScript 类型定义
 test/
-└── executor.test.mjs  # 单元测试
+├── executor.test.mjs  # 单元测试（executor）
+└── audit.test.mjs     # 审计日志单测
+AGENTS.md              # AI 协作与 MCP token 约定
 Dockerfile             # 容器化部署
 ```
 

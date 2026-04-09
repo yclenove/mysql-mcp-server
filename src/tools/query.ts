@@ -30,25 +30,25 @@ function formatExplainResult(rows: any[]): string {
 export function registerQueryTools(server: McpServer): void {
   server.tool(
     'query',
-    '执行只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN），支持参数化查询',
+    '只读 SELECT/SHOW/DESC/EXPLAIN；? 参数；可选 limit 或 page+pageSize',
     {
-      sql: z.string().describe('SQL 查询语句'),
-      params: z.array(z.any()).optional().describe('查询参数'),
+      sql: z.string().describe('SQL'),
+      params: z.array(z.any()).optional().describe('? 绑定值'),
       limit: z
         .number()
         .int()
         .min(1)
         .max(10000)
         .optional()
-        .describe('限制返回行数，覆盖服务器默认值'),
-      page: z.number().int().min(1).optional().describe('页码（从 1 开始），需配合 pageSize 使用'),
+        .describe('最大行数，覆盖 MYSQL_MAX_ROWS'),
+      page: z.number().int().min(1).optional().describe('页码，从 1'),
       pageSize: z
         .number()
         .int()
         .min(1)
         .max(1000)
         .optional()
-        .describe('每页行数（默认 20），需配合 page 使用'),
+        .describe('每页行数，默认 20'),
     },
     async ({ sql, params = [], limit, page, pageSize }) => {
       if (!isReadOnlyQuery(sql)) {
@@ -95,9 +95,9 @@ export function registerQueryTools(server: McpServer): void {
 
   server.tool(
     'explain_query',
-    '分析 SQL 查询的执行计划（EXPLAIN），用于性能优化',
+    'EXPLAIN 单条 SELECT',
     {
-      sql: z.string().describe('要分析的 SELECT 查询语句'),
+      sql: z.string().describe('SELECT 语句'),
     },
     async ({ sql }) => {
       const trimmed = sql.trim().toLowerCase();
