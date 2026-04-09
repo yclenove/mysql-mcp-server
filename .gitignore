@@ -54,4 +54,10 @@ data
 docs
 assets
 
+# 集成测试（含本地配置）
+test-integration.mjs
+
+# Cursor rules（本地开发用）
+.cursor/
+
 # package-lock.json  # 保留以支持 npm ci

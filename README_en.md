@@ -1,170 +1,146 @@
 # MySQL MCP Server
 
+[![npm version](https://img.shields.io/npm/v/@wenit/mysql-mcp-server.svg)](https://www.npmjs.com/package/@wenit/mysql-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
+
 **[简体中文](./README.md) | English**
 
-A Node.js-based MySQL MCP (Model Context Protocol) server that enables MySQL database operations through the MCP protocol.
+A MySQL database tool server based on MCP (Model Context Protocol), enabling AI assistants to safely query and operate MySQL databases.
 
-## Quick Start (1 minute)
+## Features
+
+- **10 streamlined tools** — query, CRUD, batch operations, and metadata
+- **Parameterized queries** — prevents SQL injection attacks
+- **Safety guards** — DELETE/UPDATE require WHERE; TRUNCATE/DROP/ALTER auto-blocked
+- **Read-only mode** — one switch for production safety
+- **Transaction protection** — batch operations auto-transact with rollback on failure
+- **Context-friendly** — compact JSON output, saves LLM token usage
+- **Query timeout & retry** — configurable timeout and auto-retry strategy
+- **SSL support** — secure connections to remote databases
+
+## Architecture
+
+```
+MCP Client (Claude/Cursor)
+    │  stdio JSON-RPC
+    ▼
+MCP Server (server.ts)
+    ├── Query Tools ──────── query
+    ├── Modify Tools ─────── insert, update, delete
+    ├── Batch Tools ──────── batch_execute, batch_insert
+    └── Schema Tools ─────── show_databases, list_tables,
+                              describe_table, show_indexes,
+                              show_create_table
+    │
+    ▼
+SQL Executor (executor.ts) ← timeout/retry/safety checks
+    │
+    ▼
+Connection Pool (connection.ts) ← mysql2 pool
+    │
+    ▼
+MySQL Database
+```
+
+## Quick Start
+
+### Using npx (Recommended)
+
+No installation needed:
 
 ```bash
+npx -y @wenit/mysql-mcp-server
+```
+
+### Global Install
+
+```bash
+npm install -g @wenit/mysql-mcp-server
+mysql-mcp-server
+```
+
+### Build from Source
+
+```bash
+git clone https://github.com/yclenove/mysql-mcp-server.git
+cd mysql-mcp-server
 npm install
-cp .env.example .env
 npm run build
 npm start
 ```
 
-On startup, the server loads `.env` from the current working directory and logs runtime info to stderr.
+## Tool API
 
-## Features
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `query` | Read-only queries (SELECT/SHOW/DESCRIBE/EXPLAIN) | `sql`, `params?` |
+| `insert` | Execute INSERT | `sql`, `params?` |
+| `update` | Execute UPDATE (WHERE required) | `sql`, `params?` |
+| `delete` | Execute DELETE (WHERE required) | `sql`, `params?` |
+| `batch_execute` | Batch SQL execution (auto-transaction), max 50 | `statements[]` |
+| `batch_insert` | Batch insert records (auto-transaction), max 50 | `table`, `records[]` |
+| `show_databases` | List all databases | none |
+| `list_tables` | List tables with info | `database?` |
+| `describe_table` | Get table column structure | `table` |
+| `show_indexes` | Get table indexes | `table` |
+| `show_create_table` | Get CREATE TABLE SQL | `table` |
 
-### Query Tools
-- **select / query** - Execute SELECT queries
+## Security
 
-### Modification Tools
-- **insert** - Execute INSERT operations
-- **update** - Execute UPDATE operations
-- **delete** - Execute DELETE operations
-- **execute** - General execution (INSERT/UPDATE/DELETE)
+### Parameterized Queries
 
-### Batch Operation Tools
-- **batch_execute** - Batch SQL execution (automatic transaction)
-- **batch_query** - Batch queries (read-only)
-- **batch_insert** - Batch insert
+All tools use parameterized queries to prevent SQL injection:
 
-### Metadata Tools
-- **show_databases** - Get all databases
-- **list_tables** - Get table list
-- **describe_table** - Get table structure
-- **show_indexes** - Get table indexes
-- **show_create_table** - Get CREATE TABLE statement
-
-## Security Features
-
-### 🔒 Parameterized Queries Prevent SQL Injection
-All tools use parameterized queries to effectively prevent SQL injection attacks:
-```javascript
-// ✅ Safe: Use parameterized queries
+```json
 { "sql": "SELECT * FROM users WHERE id = ?", "params": [1] }
-
-// ❌ Dangerous: Direct SQL concatenation (not supported by this tool)
-{ "sql": "SELECT * FROM users WHERE id = 1 OR 1=1" }
 ```
 
-### 🛡️ Dangerous Operation Interception
-DELETE and UPDATE statements must include WHERE conditions; otherwise execution is automatically rejected:
-```javascript
-// ❌ Rejected: Missing WHERE condition
-{ "sql": "DELETE FROM users" }
-// Error: Dangerous operation: DELETE or UPDATE statement missing WHERE clause, execution rejected
+### Dangerous Operation Interception
 
-// ✅ Allowed
-{ "sql": "DELETE FROM users WHERE id = ?", "params": [1] }
-```
+| Operation | Rule |
+|-----------|------|
+| DELETE / UPDATE | WHERE clause required |
+| TRUNCATE | Always blocked |
+| DROP | Always blocked |
+| ALTER | Always blocked |
 
-### 📖 Read-Only Mode (MYSQL_READONLY)
-Enable read-only mode via environment variable to prohibit all write operations, suitable for production environment queries:
+### Read-Only Mode
 
-```bash
-# Enable read-only mode
-MYSQL_READONLY=true
-```
+Set `MYSQL_READONLY=true` for three-layer protection:
 
-**Read-Only Mode Protection Layers:**
-
-| Layer | Protection Mechanism | Description |
-|-------|---------------------|-------------|
-| Layer 1 | Tool Layer Interception | `insert`/`update`/`delete`/`execute` tools directly reject execution |
-| Layer 2 | Batch Filtering | `batch_execute` automatically filters non-query statements |
-| Layer 3 | Execution Layer Check | Underlying executor final verification, only allows SELECT/SHOW/DESCRIBE |
-
-**Example - Behavior in Read-Only Mode:**
-```javascript
-// ❌ Rejected (tool layer)
-{ "sql": "INSERT INTO users (name) VALUES ('test')" }
-// Error: Currently in read-only mode, INSERT/UPDATE/DELETE operations are prohibited
-
-// ❌ Rejected (batch operation)
-{ "statements": [
-  { "sql": "SELECT * FROM users" },
-  { "sql": "DELETE FROM logs WHERE id = 1" }
-]}
-// Error: Read-only mode prohibits execution of 1 write statement
-
-// ✅ Allowed
-{ "sql": "SELECT * FROM users WHERE id = 1" }
-{ "sql": "SHOW TABLES" }
-{ "sql": "DESCRIBE users" }
-```
-
-### 🔗 Batch Operation Transaction Protection
-Batch operations automatically use transactions; if any statement fails, all operations rollback to ensure data consistency:
-```javascript
-// Both statements execute in the same transaction
-{ "statements": [
-  { "sql": "INSERT INTO orders (user_id) VALUES (?)", "params": [1] },
-  { "sql": "UPDATE users SET order_count = order_count + 1 WHERE id = ?", "params": [1] }
-]}
-// If the second statement fails, the first statement automatically rolls back
-```
-
-## Installation
-
-### Install via npm (Recommended)
-
-```bash
-# Global installation
-npm install -g @wenit/mysql-mcp-server
-
-# Or install in project
-npm install @wenit/mysql-mcp-server
-```
-
-### Install from Source
-
-```bash
-# Clone or download project
-cd mysql-mcp-server
-
-# Install dependencies
-npm install
-
-# Compile TypeScript
-npm run build
-```
+1. **Tool layer**: insert/update/delete tools reject directly
+2. **Batch layer**: batch_execute filters non-query statements
+3. **Executor layer**: final validation at SQL execution level
 
 ## Configuration
 
 ### Environment Variables
 
-Create `.env` file or set the following environment variables:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MYSQL_HOST` | localhost | MySQL host |
+| `MYSQL_PORT` | 3306 | Port |
+| `MYSQL_USER` | root | Username |
+| `MYSQL_PASSWORD` | - | Password |
+| `MYSQL_DATABASE` | - | Default database |
+| `MYSQL_READONLY` | false | Read-only mode |
+| `MYSQL_MAX_ROWS` | 100 | Max rows per query |
+| `MYSQL_QUERY_TIMEOUT` | 30000 | Query timeout (ms) |
+| `MYSQL_RETRY_COUNT` | 2 | Read-only query retry count |
+| `MYSQL_RETRY_DELAY_MS` | 200 | Base retry delay (exponential backoff) |
+| `MYSQL_CONNECTION_LIMIT` | 10 | Connection pool size |
+| `MYSQL_TIMEOUT` | 60000 | Connection timeout (ms) |
+| `MYSQL_SSL_CA` | - | SSL CA certificate path |
+| `MYSQL_SSL_CERT` | - | SSL client certificate path |
+| `MYSQL_SSL_KEY` | - | SSL client key path |
+| `MCP_DEBUG` | false | Enable debug info (returns executionTime) |
 
-```bash
-# Required configuration
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=test
+### MCP Client Configuration
 
-# Optional configuration
-MYSQL_CONNECTION_LIMIT=10
-MYSQL_QUERY_TIMEOUT=30000   # Per-query timeout in milliseconds
-MYSQL_RETRY_COUNT=2         # Retry attempts for retriable read-only errors
-MYSQL_RETRY_DELAY_MS=200    # Base retry delay (ms, exponential backoff)
-MYSQL_MAX_ROWS=1000         # Max rows returned per query (truncated when exceeded)
+#### Claude Desktop
 
-# Security-related configuration
-MYSQL_READONLY=false        # Enable read-only mode (true/false)
-
-# SSL configuration (optional)
-MYSQL_SSL_CA=/path/to/ca.pem
-```
-
-### Claude Desktop Configuration
-
-Edit `claude_desktop_config.json`:
-
-#### Method 1: Using npx (Recommended, no global installation needed)
+Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude/`, [Windows] `%APPDATA%/Claude/`):
 
 ```json
 {
@@ -177,111 +153,27 @@ Edit `claude_desktop_config.json`:
         "MYSQL_PORT": "3306",
         "MYSQL_USER": "root",
         "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test",
-        "MYSQL_READONLY": "false"
+        "MYSQL_DATABASE": "your_database"
       }
     }
   }
 }
 ```
 
-#### Method 2: Using Globally Installed Package
+#### Cursor
 
-**Windows:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "mysql-mcp-server",
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test",
-        "MYSQL_READONLY": "false"
-      }
-    }
-  }
-}
-```
+Add MCP server in Cursor settings with command `npx -y @wenit/mysql-mcp-server` and configure environment variables accordingly.
 
-**macOS/Linux:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "mysql-mcp-server",
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test"
-      }
-    }
-  }
-}
-```
-
-#### Method 3: Using Local Path
-
-**Windows:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "node",
-      "args": ["E:\\path\\to\\mysql-mcp-server\\dist\\index.js"],
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test",
-        "MYSQL_READONLY": "false"
-      }
-    }
-  }
-}
-```
-
-**macOS/Linux:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "node",
-      "args": ["/path/to/mysql-mcp-server/dist/index.js"],
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test"
-      }
-    }
-  }
-}
-```
-
-Configuration file location:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
-
-#### Read-Only Mode Configuration Example
-
-Production environments should enable read-only mode to prevent accidental operations:
+#### Production (Read-Only Mode)
 
 ```json
 {
   "mcpServers": {
-    "mysql-production": {
+    "mysql-prod": {
       "command": "npx",
       "args": ["-y", "@wenit/mysql-mcp-server"],
       "env": {
         "MYSQL_HOST": "prod-db.example.com",
-        "MYSQL_PORT": "3306",
         "MYSQL_USER": "readonly_user",
         "MYSQL_PASSWORD": "password",
         "MYSQL_DATABASE": "production",
@@ -292,96 +184,51 @@ Production environments should enable read-only mode to prevent accidental opera
 }
 ```
 
-## Usage Examples
-
-### Query Data
-```javascript
-// Using select tool
-{
-  "sql": "SELECT * FROM users WHERE age > ?",
-  "params": [18]
-}
-```
-
-### Insert Data
-```javascript
-// Using insert tool
-{
-  "sql": "INSERT INTO users (name, email) VALUES (?, ?)",
-  "params": ["John", "john@example.com"]
-}
-
-// Or use batch insert
-{
-  "table": "users",
-  "records": [
-    { "name": "John", "email": "john@example.com" },
-    { "name": "Jane", "email": "jane@example.com" }
-  ]
-}
-```
-
-### Update Data
-```javascript
-// Using update tool
-{
-  "sql": "UPDATE users SET age = ? WHERE id = ?",
-  "params": [25, 1]
-}
-```
-
-### View Table Structure
-```javascript
-// Using describe_table tool
-{
-  "table": "users"
-}
-```
-
-### Batch Execution
-```javascript
-// Using batch_execute tool
-{
-  "statements": [
-    { "sql": "INSERT INTO logs (action) VALUES (?)", "params": ["login"] },
-    { "sql": "UPDATE users SET last_login = NOW() WHERE id = ?", "params": [1] }
-  ]
-}
-```
-
 ## Development
 
-```bash
-# Development mode (auto compile)
-npm run dev
+### Project Structure
 
-# Start server
-npm start
-
-# Test with MCP Inspector
-npm run inspector
+```
+src/
+├── index.ts           # Entry point, .env loading & startup
+├── server.ts          # MCP Server creation & tool registration
+├── db/
+│   ├── connection.ts  # Connection pool, config
+│   └── executor.ts    # SQL executor, safety checks, timeout/retry
+├── tools/
+│   ├── query.ts       # Query tool (query)
+│   ├── modify.ts      # Modify tools (insert/update/delete)
+│   ├── batch.ts       # Batch tools (batch_execute/batch_insert)
+│   └── schema.ts      # Metadata tools
+└── types/
+    └── index.ts       # TypeScript type definitions
 ```
 
-## Notes
+### Commands
 
-1. **Security**:
-   - Production environments strongly recommend enabling `MYSQL_READONLY=true` read-only mode
-   - Even in development, consider using read-only mode first to understand data structure
-   - All write operations have WHERE condition checks to prevent accidental table-wide deletion
+```bash
+npm run dev        # Development mode (auto-compile)
+npm run build      # Build
+npm start          # Start server
+npm run lint       # Lint check
+npm run format     # Format code
+npm run inspector  # MCP Inspector debug
+```
 
-2. **Connection Pool**: Default connection pool size is 10, adjustable via `MYSQL_CONNECTION_LIMIT`
+## Troubleshooting
 
-3. **Timeout**: Default connection timeout is 60 seconds, adjustable via `MYSQL_TIMEOUT`
-4. **Query protection**:
-   - Per-query timeout via `MYSQL_QUERY_TIMEOUT`
-   - Automatic retry/backoff for retriable read-only failures
-   - Response row cap via `MYSQL_MAX_ROWS`; when exceeded, response includes `truncated=true`
+**Connection failed**: Verify MySQL is running and host/port/user/password are correct. For remote connections, check firewall rules and MySQL `bind-address` config.
 
-5. **Read-Only Mode Limitations**:
-   - Only allows execution of `SELECT`, `SHOW`, `DESCRIBE`, `DESC`, `EXPLAIN` statements
-   - Write statements in `batch_execute` are automatically filtered
-   - Modification tools (insert/update/delete/execute) return errors directly
+**Query timeout**: Increase `MYSQL_QUERY_TIMEOUT` (default 30s). For large datasets, use `MYSQL_MAX_ROWS` to limit returned rows.
+
+**Write rejected in read-only mode**: Expected behavior. Check if `MYSQL_READONLY` is set to `true`.
+
+**SSL connection**: Set `MYSQL_SSL_CA` to point to your CA certificate file. For mutual TLS, also set `MYSQL_SSL_CERT` and `MYSQL_SSL_KEY`.
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 
-MIT
+[MIT](./LICENSE)

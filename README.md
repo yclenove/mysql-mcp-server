@@ -1,170 +1,146 @@
 # MySQL MCP Server
 
+[![npm version](https://img.shields.io/npm/v/@wenit/mysql-mcp-server.svg)](https://www.npmjs.com/package/@wenit/mysql-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
+
 **简体中文 | [English](./README_en.md)**
 
-一个基于 Node.js 的 MySQL MCP (Model Context Protocol) 服务器，支持通过 MCP 协议操作 MySQL 数据库。
+基于 MCP（Model Context Protocol）协议的 MySQL 数据库工具服务器，让 AI 助手能够安全地查询和操作 MySQL 数据库。
 
-## 快速开始（1 分钟）
+## 特性
+
+- **10 个精简工具** — 查询、增删改、批量操作、元数据一应俱全
+- **参数化查询** — 防止 SQL 注入攻击
+- **安全防护** — DELETE/UPDATE 必须带 WHERE，TRUNCATE/DROP/ALTER 自动拦截
+- **只读模式** — 一键开启，适合生产环境
+- **事务保护** — 批量操作自动事务，失败即回滚
+- **上下文友好** — 紧凑 JSON 输出，节省 LLM token 消耗
+- **查询超时与重试** — 可配置超时时间和自动重试策略
+- **SSL 支持** — 安全连接到远程数据库
+
+## 架构
+
+```
+MCP Client (Claude/Cursor)
+    │  stdio JSON-RPC
+    ▼
+MCP Server (server.ts)
+    ├── Query Tools ──────── query
+    ├── Modify Tools ─────── insert, update, delete
+    ├── Batch Tools ──────── batch_execute, batch_insert
+    └── Schema Tools ─────── show_databases, list_tables,
+                              describe_table, show_indexes,
+                              show_create_table
+    │
+    ▼
+SQL Executor (executor.ts) ← 超时/重试/安全检查
+    │
+    ▼
+Connection Pool (connection.ts) ← mysql2 连接池
+    │
+    ▼
+MySQL Database
+```
+
+## 快速开始
+
+### 使用 npx（推荐）
+
+无需安装，直接运行：
 
 ```bash
+npx -y @wenit/mysql-mcp-server
+```
+
+### 全局安装
+
+```bash
+npm install -g @wenit/mysql-mcp-server
+mysql-mcp-server
+```
+
+### 从源码构建
+
+```bash
+git clone https://github.com/yclenove/mysql-mcp-server.git
+cd mysql-mcp-server
 npm install
-cp .env.example .env
 npm run build
 npm start
 ```
 
-默认启动后会从当前工作目录加载 `.env`，并在 stderr 输出连接信息。
+## 工具 API
 
-## 功能特性
-
-### 查询类工具
-- **select / query** - 执行 SELECT 查询
-
-### 修改类工具
-- **insert** - 执行 INSERT 插入
-- **update** - 执行 UPDATE 更新  
-- **delete** - 执行 DELETE 删除
-- **execute** - 通用执行（INSERT/UPDATE/DELETE）
-
-### 批量操作工具
-- **batch_execute** - 批量执行 SQL（自动使用事务）
-- **batch_query** - 批量查询（只读）
-- **batch_insert** - 批量插入
-
-### 元数据工具
-- **show_databases** - 获取所有数据库
-- **list_tables** - 获取表列表
-- **describe_table** - 获取表结构
-- **show_indexes** - 获取表索引
-- **show_create_table** - 获取建表语句
+| 工具 | 说明 | 参数 |
+|------|------|------|
+| `query` | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN） | `sql`, `params?` |
+| `insert` | 执行 INSERT | `sql`, `params?` |
+| `update` | 执行 UPDATE（必须含 WHERE） | `sql`, `params?` |
+| `delete` | 执行 DELETE（必须含 WHERE） | `sql`, `params?` |
+| `batch_execute` | 批量执行 SQL（自动事务），最多 50 条 | `statements[]` |
+| `batch_insert` | 批量插入记录（自动事务），最多 50 条 | `table`, `records[]` |
+| `show_databases` | 列出所有数据库 | 无 |
+| `list_tables` | 列出表及其信息 | `database?` |
+| `describe_table` | 获取表字段结构 | `table` |
+| `show_indexes` | 获取表索引 | `table` |
+| `show_create_table` | 获取建表 SQL | `table` |
 
 ## 安全特性
 
-### 🔒 参数化查询防 SQL 注入
-所有工具均使用参数化查询，有效防止 SQL 注入攻击：
-```javascript
-// ✅ 安全：使用参数化查询
+### 参数化查询
+
+所有工具均使用参数化查询防止 SQL 注入：
+
+```json
 { "sql": "SELECT * FROM users WHERE id = ?", "params": [1] }
-
-// ❌ 危险：直接拼接 SQL（本工具不支持）
-{ "sql": "SELECT * FROM users WHERE id = 1 OR 1=1" }
 ```
 
-### 🛡️ 危险操作拦截
-DELETE 和 UPDATE 语句必须包含 WHERE 条件，否则自动拒绝执行：
-```javascript
-// ❌ 被拒绝：缺少 WHERE 条件
-{ "sql": "DELETE FROM users" }
-// 错误：危险操作：DELETE 或 UPDATE 语句缺少 WHERE 子句，拒绝执行
+### 危险操作拦截
 
-// ✅ 允许执行
-{ "sql": "DELETE FROM users WHERE id = ?", "params": [1] }
-```
+| 操作 | 拦截规则 |
+|------|----------|
+| DELETE / UPDATE | 必须包含 WHERE 子句 |
+| TRUNCATE | 始终拦截 |
+| DROP | 始终拦截 |
+| ALTER | 始终拦截 |
 
-### 📖 只读模式（MYSQL_READONLY）
-通过环境变量启用只读模式，禁止一切写入操作，适合生产环境查询：
+### 只读模式
 
-```bash
-# 启用只读模式
-MYSQL_READONLY=true
-```
+设置 `MYSQL_READONLY=true` 启用只读模式，三层防护确保安全：
 
-**只读模式的防护层级：**
-
-| 层级 | 防护机制 | 说明 |
-|------|----------|------|
-| 第一层 | 工具层拦截 | `insert`/`update`/`delete`/`execute` 工具直接拒绝执行 |
-| 第二层 | 批量过滤 | `batch_execute` 自动过滤非查询语句 |
-| 第三层 | 执行层检查 | 底层执行器最终校验，只允许 SELECT/SHOW/DESCRIBE |
-
-**示例 - 只读模式下的行为：**
-```javascript
-// ❌ 被拒绝（工具层）
-{ "sql": "INSERT INTO users (name) VALUES ('test')" }
-// 错误：当前处于只读模式，禁止执行 INSERT/UPDATE/DELETE 操作
-
-// ❌ 被拒绝（批量操作）
-{ "statements": [
-  { "sql": "SELECT * FROM users" },
-  { "sql": "DELETE FROM logs WHERE id = 1" }
-]}
-// 错误：只读模式下禁止执行 1 条写入语句
-
-// ✅ 允许执行
-{ "sql": "SELECT * FROM users WHERE id = 1" }
-{ "sql": "SHOW TABLES" }
-{ "sql": "DESCRIBE users" }
-```
-
-### 🔗 批量操作事务保护
-批量操作自动使用事务，任一语句失败则全部回滚，保证数据一致性：
-```javascript
-// 两条语句在同一个事务中执行
-{ "statements": [
-  { "sql": "INSERT INTO orders (user_id) VALUES (?)", "params": [1] },
-  { "sql": "UPDATE users SET order_count = order_count + 1 WHERE id = ?", "params": [1] }
-]}
-// 如果第二条失败，第一条自动回滚
-```
-
-## 安装
-
-### 通过 npm 安装（推荐）
-
-```bash
-# 全局安装
-npm install -g @wenit/mysql-mcp-server
-
-# 或在项目中安装
-npm install @wenit/mysql-mcp-server
-```
-
-### 从源码安装
-
-```bash
-# 克隆或下载项目
-cd mysql-mcp-server
-
-# 安装依赖
-npm install
-
-# 编译 TypeScript
-npm run build
-```
+1. **工具层**：insert/update/delete 工具直接拒绝
+2. **批量层**：batch_execute 过滤非查询语句
+3. **执行层**：底层执行器最终校验
 
 ## 配置
 
 ### 环境变量
 
-创建 `.env` 文件或设置以下环境变量：
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `MYSQL_HOST` | localhost | MySQL 主机 |
+| `MYSQL_PORT` | 3306 | 端口 |
+| `MYSQL_USER` | root | 用户名 |
+| `MYSQL_PASSWORD` | - | 密码 |
+| `MYSQL_DATABASE` | - | 默认数据库 |
+| `MYSQL_READONLY` | false | 只读模式 |
+| `MYSQL_MAX_ROWS` | 100 | 单次返回最大行数 |
+| `MYSQL_QUERY_TIMEOUT` | 30000 | 查询超时（毫秒） |
+| `MYSQL_RETRY_COUNT` | 2 | 只读查询重试次数 |
+| `MYSQL_RETRY_DELAY_MS` | 200 | 重试基础延时（指数退避） |
+| `MYSQL_CONNECTION_LIMIT` | 10 | 连接池大小 |
+| `MYSQL_TIMEOUT` | 60000 | 连接超时（毫秒） |
+| `MYSQL_SSL_CA` | - | SSL CA 证书路径 |
+| `MYSQL_SSL_CERT` | - | SSL 客户端证书路径 |
+| `MYSQL_SSL_KEY` | - | SSL 客户端密钥路径 |
+| `MCP_DEBUG` | false | 开启调试信息（返回 executionTime） |
 
-```bash
-# 必需配置
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=test
+### MCP 客户端配置
 
-# 可选配置
-MYSQL_CONNECTION_LIMIT=10
-MYSQL_QUERY_TIMEOUT=30000   # 单条查询超时（毫秒）
-MYSQL_RETRY_COUNT=2         # 可重试错误重试次数
-MYSQL_RETRY_DELAY_MS=200    # 重试基础延时（毫秒，指数退避）
-MYSQL_MAX_ROWS=1000         # 单次返回最大行数（超出会截断）
+#### Claude Desktop
 
-# 安全相关配置
-MYSQL_READONLY=false        # 启用只读模式（true/false）
-
-# SSL 配置（可选）
-MYSQL_SSL_CA=/path/to/ca.pem
-```
-
-### Claude Desktop 配置
-
-编辑 `claude_desktop_config.json`：
-
-#### 方式一：使用 npx（推荐，无需全局安装）
+编辑 `claude_desktop_config.json`（[macOS] `~/Library/Application Support/Claude/`、[Windows] `%APPDATA%/Claude/`）：
 
 ```json
 {
@@ -177,111 +153,27 @@ MYSQL_SSL_CA=/path/to/ca.pem
         "MYSQL_PORT": "3306",
         "MYSQL_USER": "root",
         "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test",
-        "MYSQL_READONLY": "false"
+        "MYSQL_DATABASE": "your_database"
       }
     }
   }
 }
 ```
 
-#### 方式二：使用全局安装的包
+#### Cursor
 
-**Windows:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "mysql-mcp-server",
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test",
-        "MYSQL_READONLY": "false"
-      }
-    }
-  }
-}
-```
+在 Cursor 设置中添加 MCP 服务器，命令为 `npx -y @wenit/mysql-mcp-server`，配置对应的环境变量。
 
-**macOS/Linux:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "mysql-mcp-server",
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test"
-      }
-    }
-  }
-}
-```
-
-#### 方式三：使用本地路径
-
-**Windows:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "node",
-      "args": ["E:\\path\\to\\mysql-mcp-server\\dist\\index.js"],
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test",
-        "MYSQL_READONLY": "false"
-      }
-    }
-  }
-}
-```
-
-**macOS/Linux:**
-```json
-{
-  "mcpServers": {
-    "mysql": {
-      "command": "node",
-      "args": ["/path/to/mysql-mcp-server/dist/index.js"],
-      "env": {
-        "MYSQL_HOST": "localhost",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "your_password",
-        "MYSQL_DATABASE": "test"
-      }
-    }
-  }
-}
-```
-
-配置文件位置：
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
-
-#### 只读模式配置示例
-
-生产环境建议启用只读模式，防止误操作：
+#### 生产环境（只读模式）
 
 ```json
 {
   "mcpServers": {
-    "mysql-production": {
+    "mysql-prod": {
       "command": "npx",
       "args": ["-y", "@wenit/mysql-mcp-server"],
       "env": {
         "MYSQL_HOST": "prod-db.example.com",
-        "MYSQL_PORT": "3306",
         "MYSQL_USER": "readonly_user",
         "MYSQL_PASSWORD": "password",
         "MYSQL_DATABASE": "production",
@@ -292,96 +184,51 @@ MYSQL_SSL_CA=/path/to/ca.pem
 }
 ```
 
-## 使用示例
-
-### 查询数据
-```javascript
-// 使用 select 工具
-{
-  "sql": "SELECT * FROM users WHERE age > ?",
-  "params": [18]
-}
-```
-
-### 插入数据
-```javascript
-// 使用 insert 工具
-{
-  "sql": "INSERT INTO users (name, email) VALUES (?, ?)",
-  "params": ["张三", "zhangsan@example.com"]
-}
-
-// 或使用批量插入
-{
-  "table": "users",
-  "records": [
-    { "name": "张三", "email": "zs@example.com" },
-    { "name": "李四", "email": "ls@example.com" }
-  ]
-}
-```
-
-### 更新数据
-```javascript
-// 使用 update 工具
-{
-  "sql": "UPDATE users SET age = ? WHERE id = ?",
-  "params": [25, 1]
-}
-```
-
-### 查看表结构
-```javascript
-// 使用 describe_table 工具
-{
-  "table": "users"
-}
-```
-
-### 批量执行
-```javascript
-// 使用 batch_execute 工具
-{
-  "statements": [
-    { "sql": "INSERT INTO logs (action) VALUES (?)", "params": ["login"] },
-    { "sql": "UPDATE users SET last_login = NOW() WHERE id = ?", "params": [1] }
-  ]
-}
-```
-
 ## 开发
 
-```bash
-# 开发模式（自动编译）
-npm run dev
+### 项目结构
 
-# 启动服务器
-npm start
-
-# 使用 MCP Inspector 测试
-npm run inspector
+```
+src/
+├── index.ts           # 入口，.env 加载与启动
+├── server.ts          # MCP Server 创建与工具注册
+├── db/
+│   ├── connection.ts  # 连接池管理、配置读取
+│   └── executor.ts    # SQL 执行器、安全检查、超时重试
+├── tools/
+│   ├── query.ts       # 查询工具 (query)
+│   ├── modify.ts      # 修改工具 (insert/update/delete)
+│   ├── batch.ts       # 批量工具 (batch_execute/batch_insert)
+│   └── schema.ts      # 元数据工具
+└── types/
+    └── index.ts       # TypeScript 类型定义
 ```
 
-## 注意事项
+### 常用命令
 
-1. **安全性**：
-   - 生产环境强烈建议启用 `MYSQL_READONLY=true` 只读模式
-   - 即使是开发环境，也建议先使用只读模式熟悉数据结构
-   - 所有写入操作都有 WHERE 条件检查，防止误删全表数据
+```bash
+npm run dev        # 开发模式（自动编译）
+npm run build      # 编译
+npm start          # 启动
+npm run lint       # 代码检查
+npm run format     # 格式化
+npm run inspector  # MCP Inspector 调试
+```
 
-2. **连接池**：默认连接池大小为 10，可通过 `MYSQL_CONNECTION_LIMIT` 调整
+## 故障排查
 
-3. **超时**：默认连接超时为 60 秒，可通过 `MYSQL_TIMEOUT` 调整
-4. **查询保护**：
-   - 单条查询支持 `MYSQL_QUERY_TIMEOUT` 超时保护
-   - 只读查询在瞬时错误下会自动退避重试
-   - 单次返回结果受 `MYSQL_MAX_ROWS` 限制，超出时返回 `truncated=true`
+**连接失败**：检查 MySQL 服务是否运行，确认 host/port/user/password 正确。远程连接注意防火墙和 MySQL 的 `bind-address` 配置。
 
-5. **只读模式限制**：
-   - 只允许执行 `SELECT`、`SHOW`、`DESCRIBE`、`DESC`、`EXPLAIN` 语句
-   - `batch_execute` 中的写入语句会被自动过滤
-   - 修改类工具（insert/update/delete/execute）会直接返回错误
+**查询超时**：调大 `MYSQL_QUERY_TIMEOUT`（默认 30s）。大量数据查询建议配合 `MYSQL_MAX_ROWS` 限制返回行数。
+
+**只读模式下写入报错**：这是预期行为。检查 `MYSQL_READONLY` 是否为 `true`。
+
+**SSL 连接**：设置 `MYSQL_SSL_CA` 指向 CA 证书文件路径。如需双向认证，同时设置 `MYSQL_SSL_CERT` 和 `MYSQL_SSL_KEY`。
+
+## 更新日志
+
+详见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ## License
 
-MIT
+[MIT](./LICENSE)

@@ -26,12 +26,15 @@ export function getConfigFromEnv(): DatabaseConfig {
     queryTimeout: parseInt(process.env.MYSQL_QUERY_TIMEOUT || '30000', 10),
     retryCount: parseInt(process.env.MYSQL_RETRY_COUNT || '2', 10),
     retryDelayMs: parseInt(process.env.MYSQL_RETRY_DELAY_MS || '200', 10),
-    maxRows: parseInt(process.env.MYSQL_MAX_ROWS || '1000', 10),
-    ssl: sslCa || sslCert || sslKey ? {
-      ca: sslCa,
-      cert: sslCert,
-      key: sslKey,
-    } : undefined,
+    maxRows: parseInt(process.env.MYSQL_MAX_ROWS || '100', 10),
+    ssl:
+      sslCa || sslCert || sslKey
+        ? {
+            ca: sslCa,
+            cert: sslCert,
+            key: sslKey,
+          }
+        : undefined,
   };
 }
 
@@ -41,7 +44,7 @@ export function getConfigFromEnv(): DatabaseConfig {
 export function getPool(): Pool {
   if (!pool) {
     const config = getConfigFromEnv();
-    
+
     const poolConfig: PoolOptions = {
       host: config.host,
       port: config.port,
@@ -96,7 +99,11 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-export async function testConnectionWithDetails(): Promise<{ success: boolean; error?: string; code?: string }> {
+export async function testConnectionWithDetails(): Promise<{
+  success: boolean;
+  error?: string;
+  code?: string;
+}> {
   try {
     const conn = await getConnection();
     await conn.query('SELECT 1');
@@ -117,4 +124,11 @@ export async function testConnectionWithDetails(): Promise<{ success: boolean; e
  */
 export function isReadOnly(): boolean {
   return process.env.MYSQL_READONLY === 'true';
+}
+
+/**
+ * 检查是否为调试模式（返回 executionTime 等额外信息）
+ */
+export function isDebugMode(): boolean {
+  return process.env.MCP_DEBUG === 'true';
 }

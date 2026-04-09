@@ -21,7 +21,13 @@ const RETRIABLE_ERROR_CODES = new Set([
 export function isReadOnlyQuery(sql: string): boolean {
   const trimmed = sql.trim().toLowerCase();
   // 只允许 SELECT 和 SHOW 语句
-  return trimmed.startsWith('select') || trimmed.startsWith('show') || trimmed.startsWith('describe') || trimmed.startsWith('desc') || trimmed.startsWith('explain');
+  return (
+    trimmed.startsWith('select') ||
+    trimmed.startsWith('show') ||
+    trimmed.startsWith('describe') ||
+    trimmed.startsWith('desc') ||
+    trimmed.startsWith('explain')
+  );
 }
 
 /**
@@ -59,7 +65,7 @@ function getRuntimeConfig() {
     queryTimeout: parseInt(process.env.MYSQL_QUERY_TIMEOUT || '30000', 10),
     retryCount: parseInt(process.env.MYSQL_RETRY_COUNT || '2', 10),
     retryDelayMs: parseInt(process.env.MYSQL_RETRY_DELAY_MS || '200', 10),
-    maxRows: parseInt(process.env.MYSQL_MAX_ROWS || '1000', 10),
+    maxRows: parseInt(process.env.MYSQL_MAX_ROWS || '100', 10),
   };
 }
 
@@ -76,12 +82,15 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
   if (timeoutMs <= 0) {
     return promise;
   }
-  return await Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(`查询超时（>${timeoutMs}ms）`)), timeoutMs);
-    }),
-  ]);
+  let timer: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`查询超时（>${timeoutMs}ms）`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer!);
+  }
 }
 
 async function executeWithRetry<T>(runner: () => Promise<T>, allowRetry: boolean): Promise<T> {
@@ -108,14 +117,25 @@ async function executeWithRetry<T>(runner: () => Promise<T>, allowRetry: boolean
  */
 function checkDangerousOperation(sql: string): string | null {
   const normalized = stripQuotedContentAndComments(sql).trim().toLowerCase();
-  
-  // 检查 DELETE/UPDATE 没有 WHERE 子句
+
+  if (normalized.startsWith('truncate')) {
+    return '危险操作：TRUNCATE 会清空整张表数据，拒绝执行';
+  }
+
+  if (normalized.startsWith('drop')) {
+    return '危险操作：DROP 会删除数据库对象，拒绝执行';
+  }
+
+  if (normalized.startsWith('alter')) {
+    return '危险操作：ALTER 会修改表结构，拒绝执行。如需 DDL 操作请直接使用数据库客户端';
+  }
+
   const isDeleteOrUpdate = normalized.startsWith('delete') || normalized.startsWith('update');
   const hasWhere = /\bwhere\b/.test(normalized);
   if (isDeleteOrUpdate && !hasWhere) {
     return '危险操作：DELETE 或 UPDATE 语句缺少 WHERE 子句，拒绝执行';
   }
-  
+
   return null;
 }
 
@@ -128,7 +148,7 @@ export async function executeQuery(
   mode: ExecutionMode = ExecutionMode.READWRITE
 ): Promise<QueryResult> {
   const startTime = Date.now();
-  
+
   try {
     // 检查只读模式
     if (mode === ExecutionMode.READONLY && !isReadOnlyQuery(sql)) {
@@ -216,7 +236,7 @@ export async function executeBatch(
   }
 
   const conn = await getConnection();
-  
+
   try {
     // 开始事务
     await conn.beginTransaction();
@@ -242,7 +262,7 @@ export async function executeBatch(
           () => withTimeout(conn.execute(sql, params) as Promise<[unknown, unknown]>, queryTimeout),
           isReadOnlyQuery(sql)
         );
-        
+
         if (Array.isArray(result)) {
           results.push({
             success: true,
@@ -283,9 +303,9 @@ export async function executeBatch(
 
     // 提交事务
     await conn.commit();
-    
+
     const executionTime = Date.now() - startTime;
-    results.forEach(r => r.executionTime = executionTime);
+    results.forEach((r) => (r.executionTime = executionTime));
 
     return {
       success: true,
@@ -328,7 +348,7 @@ export async function listTables(database?: string): Promise<QueryResult> {
       error: '未指定数据库，请在参数中提供或设置 MYSQL_DATABASE 环境变量',
     };
   }
-  
+
   const sql = `
     SELECT 
       table_name as \`name\`,
@@ -342,7 +362,7 @@ export async function listTables(database?: string): Promise<QueryResult> {
     WHERE table_schema = ?
     ORDER BY table_name
   `;
-  
+
   return executeQuery(sql, [db]);
 }
 
@@ -370,7 +390,7 @@ export async function describeTable(table: string): Promise<QueryResult> {
     WHERE table_schema = DATABASE() AND table_name = ?
     ORDER BY ordinal_position
   `;
-  
+
   return executeQuery(sql, [table]);
 }
 
