@@ -196,7 +196,16 @@ function createMysqlPool(config: DatabaseConfig): Pool {
     poolConfig.ssl = config.ssl;
   }
 
-  return mysql.createPool(poolConfig);
+  const pool = mysql.createPool(poolConfig);
+
+  /** 会话级只读，与工具层 MYSQL_READONLY 双保险（MySQL 5.6+ / MariaDB 10.0+ 支持 transaction_read_only） */
+  if (process.env.MYSQL_READONLY === 'true') {
+    pool.on('connection', (connection) => {
+      void connection.query('SET SESSION transaction_read_only = 1').catch(() => undefined);
+    });
+  }
+
+  return pool;
 }
 
 function setMeta(id: string, config: DatabaseConfig): void {

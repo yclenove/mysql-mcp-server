@@ -1,12 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-const KEYS = [
-  'MYSQL_DATABASE_ALLOWLIST',
-  'MYSQL_DATABASE',
-  'MYSQL_URL',
-  'MYSQL_CONNECTION_STRING',
-];
+const KEYS = ['MYSQL_DATABASE_ALLOWLIST', 'MYSQL_DATABASE', 'MYSQL_URL', 'MYSQL_CONNECTION_STRING'];
 
 function snapshotEnv() {
   const snap = {};
@@ -80,9 +75,7 @@ describe('database allowlist', () => {
   it('validateStartupDatabaseAgainstAllowlist：无白名单不校验', async () => {
     delete process.env.MYSQL_DATABASE_ALLOWLIST;
     process.env.MYSQL_DATABASE = 'not_in_any_list';
-    const { validateStartupDatabaseAgainstAllowlist } = await import(
-      '../dist/db/allowlist.js'
-    );
+    const { validateStartupDatabaseAgainstAllowlist } = await import('../dist/db/allowlist.js');
     assert.doesNotThrow(() => validateStartupDatabaseAgainstAllowlist());
   });
 
@@ -91,9 +84,7 @@ describe('database allowlist', () => {
     process.env.MYSQL_DATABASE = 'other';
     delete process.env.MYSQL_URL;
     delete process.env.MYSQL_CONNECTION_STRING;
-    const { validateStartupDatabaseAgainstAllowlist } = await import(
-      '../dist/db/allowlist.js'
-    );
+    const { validateStartupDatabaseAgainstAllowlist } = await import('../dist/db/allowlist.js');
     assert.throws(() => validateStartupDatabaseAgainstAllowlist(), /不在 MYSQL_DATABASE_ALLOWLIST/);
   });
 
@@ -102,9 +93,7 @@ describe('database allowlist', () => {
     delete process.env.MYSQL_DATABASE;
     process.env.MYSQL_URL = 'mysql://u:p@h:3306/from_url';
     delete process.env.MYSQL_CONNECTION_STRING;
-    const { validateStartupDatabaseAgainstAllowlist } = await import(
-      '../dist/db/allowlist.js'
-    );
+    const { validateStartupDatabaseAgainstAllowlist } = await import('../dist/db/allowlist.js');
     assert.throws(() => validateStartupDatabaseAgainstAllowlist(), /from_url/);
   });
 

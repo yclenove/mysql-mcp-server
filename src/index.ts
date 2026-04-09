@@ -22,8 +22,13 @@ import {
   initConnectionPools,
   pingConnectionById,
   getExtraConnectionIds,
+  parseExtraConnections,
 } from './db/connection.js';
-import { getDatabaseAllowlist, validateStartupDatabaseAgainstAllowlist } from './db/allowlist.js';
+import {
+  getDatabaseAllowlist,
+  validateStartupDatabaseAgainstAllowlist,
+  validateExtraConnectionsAgainstAllowlist,
+} from './db/allowlist.js';
 
 // 智能加载 .env 文件（按优先级）
 function loadEnvFile(): string {
@@ -76,6 +81,8 @@ async function main() {
   try {
     getDatabaseAllowlist();
     validateStartupDatabaseAgainstAllowlist();
+    const extras = parseExtraConnections(process.env.MYSQL_MCP_EXTRA_CONNECTIONS);
+    validateExtraConnectionsAgainstAllowlist(extras);
   } catch (e) {
     log(`ERROR: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);

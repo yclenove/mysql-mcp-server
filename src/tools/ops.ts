@@ -8,7 +8,6 @@ import { executeQuery } from '../db/executor.js';
 import { ExecutionMode } from '../types/index.js';
 import { isReadOnly } from '../db/connection.js';
 
-const PROCESS_LIST_MAX = 100;
 const AUDIT_TAIL_MAX = 500;
 const AUDIT_TAIL_DEFAULT = 50;
 const AUDIT_TAIL_CHUNK = 512 * 1024;
@@ -23,6 +22,20 @@ function killQueryEnabled(): boolean {
 
 function readAuditEnabled(): boolean {
   return process.env.MYSQL_MCP_READ_AUDIT_TOOL === 'true' && !!process.env.MCP_AUDIT_LOG?.trim();
+}
+
+function readSlowLogEnabled(): boolean {
+  return (
+    process.env.MYSQL_MCP_READ_SLOW_LOG === 'true' && !!process.env.MYSQL_MCP_SLOW_LOG_PATH?.trim()
+  );
+}
+
+function getProcessListMaxRows(): number {
+  const n = parseInt(process.env.MYSQL_MCP_PROCESS_LIST_MAX || '100', 10);
+  if (!Number.isFinite(n) || n < 1) {
+    return 100;
+  }
+  return Math.min(n, 5000);
 }
 
 function readAuditTailLines(path: string, maxLines: number): string {
@@ -49,9 +62,11 @@ export function registerOpsTools(server: McpServer): void {
     server.registerTool(
       'process_list',
       {
-        description: `SHOW FULL PROCESSLIST（最多 ${PROCESS_LIST_MAX} 行）；需 PROCESS 权限`,
+        description:
+          'SHOW FULL PROCESSLIST（行数上限 MYSQL_MCP_PROCESS_LIST_MAX，默认 100）；需 PROCESS 权限',
       },
       async (_extra) => {
+        const maxRows = getProcessListMaxRows();
         const result = await executeQuery('SHOW FULL PROCESSLIST', [], ExecutionMode.READONLY);
         if (!result.success) {
           return {
@@ -60,14 +75,15 @@ export function registerOpsTools(server: McpServer): void {
           };
         }
         const data = result.data || [];
-        const rows = data.slice(0, PROCESS_LIST_MAX);
+        const rows = data.slice(0, maxRows);
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify({
                 rows,
-                truncated: data.length > PROCESS_LIST_MAX,
+                maxRows,
+                truncated: data.length > maxRows,
               }),
             },
           ],
@@ -160,6 +176,34 @@ export function registerOpsTools(server: McpServer): void {
       },
       async ({ lines }, _extra) => {
         const path = process.env.MCP_AUDIT_LOG!.trim();
+        const n = Math.min(lines ?? AUDIT_TAIL_DEFAULT, AUDIT_TAIL_MAX);
+        try {
+          const tail = readAuditTailLines(path, n);
+          return {
+            content: [{ type: 'text', text: tail }],
+          };
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return {
+            content: [{ type: 'text', text: `读取失败：${msg}` }],
+            isError: true,
+          };
+        }
+      }
+    );
+  }
+
+  if (readSlowLogEnabled()) {
+    server.registerTool(
+      'read_slow_query_log',
+      {
+        description: `读取 MYSQL_MCP_SLOW_LOG_PATH 慢日志文件尾部（默认 ${AUDIT_TAIL_DEFAULT} 行，最大 ${AUDIT_TAIL_MAX}）`,
+        inputSchema: {
+          lines: z.number().int().min(1).max(AUDIT_TAIL_MAX).optional().describe('行数'),
+        },
+      },
+      async ({ lines }, _extra) => {
+        const path = process.env.MYSQL_MCP_SLOW_LOG_PATH!.trim();
         const n = Math.min(lines ?? AUDIT_TAIL_DEFAULT, AUDIT_TAIL_MAX);
         try {
           const tail = readAuditTailLines(path, n);

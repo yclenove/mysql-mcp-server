@@ -2,7 +2,7 @@
  * MYSQL_DATABASE_ALLOWLIST：逗号分隔的库名白名单；未设置则不限制。
  * 库名仅允许字母、数字、下划线，与 validateIdentifier 一致。
  */
-import { getConfigFromEnv } from './connection.js';
+import { getConfigFromEnv, type ParsedExtraConnection } from './connection.js';
 
 const IDENTIFIER_REGEX = /^[A-Za-z0-9_]+$/;
 
@@ -58,6 +58,30 @@ export function validateStartupDatabaseAgainstAllowlist(): void {
     throw new Error(
       `默认数据库「${db}」不在 MYSQL_DATABASE_ALLOWLIST 中（当前允许：${[...list].join(', ')}）`
     );
+  }
+}
+
+/**
+ * 若设置 MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS=true，校验每个额外 DSN 的默认库在白名单内（需已配置 MYSQL_DATABASE_ALLOWLIST）。
+ */
+export function validateExtraConnectionsAgainstAllowlist(extras: ParsedExtraConnection[]): void {
+  if (process.env.MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS !== 'true') {
+    return;
+  }
+  const list = getDatabaseAllowlist();
+  if (!list) {
+    return;
+  }
+  for (const { id, config } of extras) {
+    const db = config.database?.trim();
+    if (!db) {
+      continue;
+    }
+    if (!list.has(db)) {
+      throw new Error(
+        `额外连接「${id}」默认库「${db}」不在 MYSQL_DATABASE_ALLOWLIST 中（当前允许：${[...list].join(', ')}）`
+      );
+    }
   }
 }
 

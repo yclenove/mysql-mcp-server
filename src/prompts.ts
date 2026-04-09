@@ -37,9 +37,7 @@ export function registerPrompts(server: McpServer): void {
       },
     },
     async ({ description, tables }, _extra) => {
-      const tableHint = tables
-        ? `表：${tables}`
-        : '先 list_tables / describe_table 再写 SQL';
+      const tableHint = tables ? `表：${tables}` : '先 list_tables / describe_table 再写 SQL';
 
       return {
         messages: [

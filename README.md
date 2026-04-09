@@ -121,6 +121,7 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 | `slow_query_status` | 慢查询相关变量（同上）                            | 无                                                      |
 | `kill_query`        | `KILL QUERY`（需 `MYSQL_MCP_KILL_QUERY`；只读模式禁用） | `thread_id`                                         |
 | `read_audit_log`    | 读审计日志尾部（需 `MYSQL_MCP_READ_AUDIT_TOOL` + `MCP_AUDIT_LOG`） | `lines?`                                    |
+| `read_slow_query_log` | 读慢日志文件尾部（需 `MYSQL_MCP_READ_SLOW_LOG` + `MYSQL_MCP_SLOW_LOG_PATH`） | `lines?`                          |
 
 ### MCP Resources
 
@@ -166,6 +167,7 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 1. **工具层**：insert/update/delete 工具直接拒绝
 2. **批量层**：batch_execute 过滤非查询语句
 3. **执行层**：底层执行器最终校验
+4. **会话层**：新建池连接时执行 `SET SESSION transaction_read_only = 1`（MySQL 5.6+ / MariaDB 10.0+；与服务器 `read_only` 全局变量无关，仅本会话）
 
 ## 配置
 
@@ -202,6 +204,12 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 | `MYSQL_MCP_OPS_TOOLS`    | false     | `true` 时注册 `process_list`、`slow_query_status` |
 | `MYSQL_MCP_KILL_QUERY`   | false     | `true` 时注册 `kill_query`（需 PROCESS；`MYSQL_READONLY` 时不可用） |
 | `MYSQL_MCP_READ_AUDIT_TOOL` | false  | `true` 且已设 `MCP_AUDIT_LOG` 时注册 `read_audit_log` |
+| `MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS` | false | `true` 且配置了 `MYSQL_DATABASE_ALLOWLIST` 时，校验每个额外 DSN 的默认库在白名单内 |
+| `MCP_QUERY_RESULT_HINT` | false | `true` 时 `query` 返回 JSON 含 `approxChars`（结果序列化字符数近似值） |
+| `MYSQL_MCP_EXPLAIN_JSON` | false | `true` 时 `explain_query` 使用 `EXPLAIN FORMAT=JSON` 并解析告警 |
+| `MYSQL_MCP_PROCESS_LIST_MAX` | 100 | `process_list` 最大行数（上限 5000） |
+| `MYSQL_MCP_READ_SLOW_LOG` | false | `true` 且配置 `MYSQL_MCP_SLOW_LOG_PATH` 时注册 `read_slow_query_log` |
+| `MYSQL_MCP_SLOW_LOG_PATH` | - | 服务器慢查询日志路径（需进程可读） |
 
 ### MCP 客户端配置
 

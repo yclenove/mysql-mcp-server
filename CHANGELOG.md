@@ -4,6 +4,17 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.0] - 2026-04-09
+
+### 新增
+
+- `MYSQL_READONLY=true` 时连接池新建连接自动 `SET SESSION transaction_read_only = 1`（MySQL 5.6+ / MariaDB 10.0+）；README 说明版本差异
+- 可选 `MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS=true`：在配置 `MYSQL_DATABASE_ALLOWLIST` 时校验每个额外 DSN 的默认库
+- `MCP_QUERY_RESULT_HINT=true`：`query` 返回 JSON 增加 `approxChars`
+- `MYSQL_MCP_EXPLAIN_JSON=true`：`explain_query` 使用 `EXPLAIN FORMAT=JSON` 并解析嵌套 JSON 告警（`explainJsonDocumentToWarnings` 等）
+- 运维：`MYSQL_MCP_PROCESS_LIST_MAX` 限制 `process_list` 行数；`MYSQL_MCP_READ_SLOW_LOG` + `MYSQL_MCP_SLOW_LOG_PATH` 启用 `read_slow_query_log`
+- CI 增加 `npm run format:check`；单测 `test/allowlist-extra.test.mjs`、`test/explain-json-warnings.test.mjs`、`test/startup-exit.test.mjs`
+
 ## [1.3.0] - 2026-04-09
 
 ### 新增
@@ -33,10 +44,6 @@
 
 - 支持通过 `MYSQL_URL` 或 `MYSQL_CONNECTION_STRING` 配置 `mysql://` / `mysql2://` 连接串；连接串中的主机/端口/用户/密码/路径库名优先于分项环境变量，未给出的字段仍可由 `MYSQL_HOST` 等补全
 - `parseMysqlConnectionUrl` 导出供测试与扩展；新增 `test/connection-url.test.mjs`
-
-### 变更
-
-- 移除已提交的 `COMPARISON_MCP_PROJECTS.md`；`.gitignore` 增加 `COMPARISON_MCP_PROJECTS.md`，便于本地保留对比笔记但不进 Git
 
 ## [1.2.4] - 2026-04-09
 

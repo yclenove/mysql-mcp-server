@@ -82,3 +82,69 @@ export function explainRowsToWarnings(rows: unknown[]): string[] {
 
   return out;
 }
+
+/**
+ * 遍历 EXPLAIN FORMAT=JSON 文档，复用行式告警规则（嵌套 table 节点）
+ */
+export function explainJsonDocumentToWarnings(doc: unknown): string[] {
+  const seen = new Set<string>();
+  const acc: string[] = [];
+
+  const visit = (node: unknown): void => {
+    if (node === null || typeof node !== 'object') {
+      return;
+    }
+    const o = node as Record<string, unknown>;
+    const accessType = typeof o.access_type === 'string' ? o.access_type.toLowerCase() : undefined;
+    const keyRaw = o.key;
+    const keyStr =
+      keyRaw === null || keyRaw === undefined
+        ? ''
+        : typeof keyRaw === 'string'
+          ? keyRaw
+          : String(keyRaw);
+    const rowsExamined =
+      typeof o.rows_examined_per_scan === 'number'
+        ? o.rows_examined_per_scan
+        : typeof o.rows === 'number'
+          ? o.rows
+          : undefined;
+    let extraStr = '';
+    if (Array.isArray(o.extra)) {
+      extraStr = o.extra.join(' ');
+    } else if (typeof o.extra === 'string') {
+      extraStr = o.extra;
+    }
+    if (accessType) {
+      const synthetic = {
+        type: accessType,
+        key: keyStr || undefined,
+        rows: rowsExamined,
+        Extra: extraStr,
+      };
+      for (const w of explainRowsToWarnings([synthetic])) {
+        if (!seen.has(w)) {
+          seen.add(w);
+          acc.push(w);
+        }
+      }
+    }
+    for (const v of Object.values(o)) {
+      if (typeof v === 'object' && v !== null) {
+        visit(v);
+      }
+    }
+  };
+
+  visit(doc);
+  return acc;
+}
+
+export function explainJsonStringToWarnings(jsonStr: string): string[] {
+  try {
+    const doc = JSON.parse(jsonStr) as unknown;
+    return explainJsonDocumentToWarnings(doc);
+  } catch {
+    return [];
+  }
+}

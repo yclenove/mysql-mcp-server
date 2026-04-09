@@ -47,5 +47,7 @@ DDL: create_table(只读禁)
 元数据: test_connection use_database show_databases list_tables describe_table show_indexes show_create_table list_connections use_connection
 安全: 参数化; DELETE/UPDATE须WHERE; 拒 TRUNCATE/DROP/ALTER; MYSQL_READONLY
 EXPLAIN: explain_query 附告警行; 多连接: list_connections use_connection + MYSQL_MCP_EXTRA_CONNECTIONS
-运维(可选): MYSQL_MCP_OPS_TOOLS process_list slow_query_status; MYSQL_MCP_KILL_QUERY kill_query; MYSQL_MCP_READ_AUDIT_TOOL read_audit_log`;
+运维(可选): MYSQL_MCP_OPS_TOOLS process_list slow_query_status; MYSQL_MCP_KILL_QUERY kill_query; MYSQL_MCP_READ_AUDIT_TOOL read_audit_log; MYSQL_MCP_READ_SLOW_LOG read_slow_query_log
+只读加固: MYSQL_READONLY 时会话 transaction_read_only; 校验额外库: MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS
+提示: MCP_QUERY_RESULT_HINT query 体积; MYSQL_MCP_EXPLAIN_JSON explain JSON 告警`;
 }

@@ -121,6 +121,7 @@ Paste the token into **GitHub → Repository → Settings → Secrets → `NPM_T
 | `slow_query_status` | Slow-query-related variables (same flag)                          | —                                                       |
 | `kill_query`        | `KILL QUERY` (needs `MYSQL_MCP_KILL_QUERY`; disabled if read-only) | `thread_id`                                            |
 | `read_audit_log`    | Tail of audit log (needs `MYSQL_MCP_READ_AUDIT_TOOL` + `MCP_AUDIT_LOG`) | `lines?`                                          |
+| `read_slow_query_log` | Tail of slow log file (needs `MYSQL_MCP_READ_SLOW_LOG` + `MYSQL_MCP_SLOW_LOG_PATH`) | `lines?`                                |
 
 ### MCP Resources
 
@@ -166,6 +167,7 @@ Set `MYSQL_READONLY=true` for three-layer protection:
 1. **Tool layer**: insert/update/delete tools reject directly
 2. **Batch layer**: batch_execute filters non-query statements
 3. **Executor layer**: final validation at SQL execution level
+4. **Session layer**: new pool connections run `SET SESSION transaction_read_only = 1` (MySQL 5.6+ / MariaDB 10.0+)
 
 ## Configuration
 
@@ -202,6 +204,12 @@ Create a `.env` file in the **project root** (copy from [`.env.example`](./.env.
 | `MYSQL_MCP_OPS_TOOLS`    | false     | If `true`, registers `process_list`, `slow_query_status` |
 | `MYSQL_MCP_KILL_QUERY`   | false     | If `true`, registers `kill_query` (needs PROCESS; not allowed when `MYSQL_READONLY`) |
 | `MYSQL_MCP_READ_AUDIT_TOOL` | false  | If `true` and `MCP_AUDIT_LOG` is set, registers `read_audit_log` |
+| `MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS` | false | If `true` and `MYSQL_DATABASE_ALLOWLIST` is set, validate each extra DSN default database |
+| `MCP_QUERY_RESULT_HINT` | false | If `true`, `query` JSON includes `approxChars` |
+| `MYSQL_MCP_EXPLAIN_JSON` | false | If `true`, `explain_query` uses `EXPLAIN FORMAT=JSON` and parses warnings |
+| `MYSQL_MCP_PROCESS_LIST_MAX` | 100 | Max rows for `process_list` (cap 5000) |
+| `MYSQL_MCP_READ_SLOW_LOG` | false | If `true` and `MYSQL_MCP_SLOW_LOG_PATH` is set, registers `read_slow_query_log` |
+| `MYSQL_MCP_SLOW_LOG_PATH` | - | Path to server slow query log (must be readable) |
 
 ### MCP Client Configuration
 

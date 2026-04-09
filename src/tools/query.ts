@@ -6,7 +6,11 @@ import { z } from 'zod';
 import { executeQuery, isReadOnlyQuery } from '../db/executor.js';
 import { ExecutionMode } from '../types/index.js';
 import { isDebugMode } from '../db/connection.js';
-import { explainRowsToWarnings } from '../explainWarnings.js';
+import {
+  explainJsonDocumentToWarnings,
+  explainJsonStringToWarnings,
+  explainRowsToWarnings,
+} from '../explainWarnings.js';
 
 function formatExplainResult(rows: any[]): string {
   return rows
@@ -79,6 +83,9 @@ export function registerQueryTools(server: McpServer): void {
       if (isDebugMode()) {
         response.executionTime = `${result.executionTime}ms`;
       }
+      if (process.env.MCP_QUERY_RESULT_HINT === 'true') {
+        response.approxChars = JSON.stringify(response).length;
+      }
 
       return {
         content: [{ type: 'text', text: JSON.stringify(response) }],
@@ -103,7 +110,12 @@ export function registerQueryTools(server: McpServer): void {
         };
       }
 
-      const result = await executeQuery(`EXPLAIN ${sql}`, [], ExecutionMode.READONLY);
+      const useJson = process.env.MYSQL_MCP_EXPLAIN_JSON === 'true';
+      const result = await executeQuery(
+        useJson ? `EXPLAIN FORMAT=JSON ${sql}` : `EXPLAIN ${sql}`,
+        [],
+        ExecutionMode.READONLY
+      );
 
       if (!result.success) {
         return {
@@ -113,8 +125,27 @@ export function registerQueryTools(server: McpServer): void {
       }
 
       const rows = result.data || [];
-      let text = formatExplainResult(rows);
-      const warnings = explainRowsToWarnings(rows);
+      let text: string;
+      let warnings: string[];
+
+      if (useJson && rows.length > 0) {
+        const r0 = rows[0] as Record<string, unknown>;
+        const raw = r0.EXPLAIN ?? r0.explain;
+        if (typeof raw === 'string') {
+          text = raw;
+          warnings = explainJsonStringToWarnings(raw);
+        } else if (raw && typeof raw === 'object') {
+          text = JSON.stringify(raw);
+          warnings = explainJsonDocumentToWarnings(raw);
+        } else {
+          text = JSON.stringify(rows);
+          warnings = [];
+        }
+      } else {
+        text = formatExplainResult(rows);
+        warnings = explainRowsToWarnings(rows);
+      }
+
       if (warnings.length > 0) {
         text += `\n\n告警:\n${warnings.map((w) => `- ${w}`).join('\n')}`;
       }
