@@ -4,7 +4,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { listTables, describeTable, listDatabases } from './db/executor.js';
-import { getPool, isReadOnly } from './db/connection.js';
+import { getPool, isReadOnly, getSessionDatabase } from './db/connection.js';
 import { filterShowDatabasesRows } from './db/allowlist.js';
 import {
   getSchemaOverviewMaxExpandTables,
@@ -44,7 +44,7 @@ export function registerResources(server: McpServer): void {
       const { expand, namesOnly } = splitTablesForSchemaOverview(tableNames, maxExpand);
 
       const sections: string[] = [];
-      sections.push(`数据库: ${process.env.MYSQL_DATABASE || '(默认)'}`);
+      sections.push(`数据库: ${getSessionDatabase() || '(默认)'}`);
       if (tableNames.length === 0) {
         sections.push('共 0 张表');
       } else if (maxExpand <= 0) {
@@ -151,7 +151,7 @@ export function registerResources(server: McpServer): void {
           waitingRequests: p._connectionQueue?.length ?? 0,
           connectionLimit: p.config?.connectionLimit ?? 0,
           readonlyMode: isReadOnly(),
-          database: process.env.MYSQL_DATABASE || '(未指定)',
+          database: getSessionDatabase() || '(未指定)',
         };
         return {
           contents: [

@@ -7,6 +7,8 @@ import { registerModifyTools } from './tools/modify.js';
 import { registerSchemaTools } from './tools/schema.js';
 import { registerBatchTools } from './tools/batch.js';
 import { registerDDLTools } from './tools/ddl.js';
+import { registerConnectionTools } from './tools/connections.js';
+import { registerOpsTools } from './tools/ops.js';
 import { registerResources } from './resources.js';
 import { registerPrompts } from './prompts.js';
 import packageJson from '../package.json' with { type: 'json' };
@@ -23,6 +25,8 @@ export function createServer(): McpServer {
   registerQueryTools(server);
   registerModifyTools(server);
   registerSchemaTools(server);
+  registerConnectionTools(server);
+  registerOpsTools(server);
   registerBatchTools(server);
   registerDDLTools(server);
   registerResources(server);
@@ -40,6 +44,8 @@ export function getToolsDescription(): string {
 写入: insert update delete(须WHERE) call_procedure
 批量: batch_execute batch_insert(事务 ≤50)
 DDL: create_table(只读禁)
-元数据: test_connection use_database show_databases list_tables describe_table show_indexes show_create_table
-安全: 参数化; DELETE/UPDATE须WHERE; 拒 TRUNCATE/DROP/ALTER; MYSQL_READONLY`;
+元数据: test_connection use_database show_databases list_tables describe_table show_indexes show_create_table list_connections use_connection
+安全: 参数化; DELETE/UPDATE须WHERE; 拒 TRUNCATE/DROP/ALTER; MYSQL_READONLY
+EXPLAIN: explain_query 附告警行; 多连接: list_connections use_connection + MYSQL_MCP_EXTRA_CONNECTIONS
+运维(可选): MYSQL_MCP_OPS_TOOLS process_list slow_query_status; MYSQL_MCP_KILL_QUERY kill_query; MYSQL_MCP_READ_AUDIT_TOOL read_audit_log`;
 }

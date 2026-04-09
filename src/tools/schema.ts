@@ -11,7 +11,13 @@ import {
   showCreateTable,
   validateIdentifier,
 } from '../db/executor.js';
-import { getPool, testConnectionWithDetails } from '../db/connection.js';
+import {
+  getPool,
+  testConnectionWithDetails,
+  getActiveConnectionId,
+  getSessionDatabase,
+  setSessionDatabaseForActiveConnection,
+} from '../db/connection.js';
 import { isDatabaseOnAllowlist, filterShowDatabasesRows } from '../db/allowlist.js';
 import { auditLog } from '../audit.js';
 
@@ -55,7 +61,8 @@ export function registerSchemaTools(server: McpServer): void {
               text: JSON.stringify({
                 connected: true,
                 version,
-                database: process.env.MYSQL_DATABASE || null,
+                connectionId: getActiveConnectionId(),
+                database: getSessionDatabase() || null,
                 latency: `${executionTime}ms`,
               }),
             },
@@ -66,7 +73,11 @@ export function registerSchemaTools(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({ connected: true, latency: `${executionTime}ms` }),
+              text: JSON.stringify({
+                connected: true,
+                connectionId: getActiveConnectionId(),
+                latency: `${executionTime}ms`,
+              }),
             },
           ],
         };
@@ -109,7 +120,7 @@ export function registerSchemaTools(server: McpServer): void {
         await pool.query(`USE \`${database}\``);
         const executionTime = Date.now() - startTime;
         auditLog({ sql: `USE \`${database}\``, success: true, executionTime });
-        process.env.MYSQL_DATABASE = database;
+        setSessionDatabaseForActiveConnection(database);
         return {
           content: [{ type: 'text', text: JSON.stringify({ database, switched: true }) }],
         };

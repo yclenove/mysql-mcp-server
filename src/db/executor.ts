@@ -2,7 +2,7 @@
  * SQL 执行器
  */
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import { getPool, getConnection } from './connection.js';
+import { getPool, getConnection, getSessionDatabase } from './connection.js';
 import { QueryResult, BatchResult, ExecutionMode } from '../types/index.js';
 import { auditLog } from '../audit.js';
 
@@ -380,11 +380,11 @@ export async function listDatabases(): Promise<QueryResult> {
  * 获取指定数据库的所有表
  */
 export async function listTables(database?: string): Promise<QueryResult> {
-  const db = database || process.env.MYSQL_DATABASE;
+  const db = database || getSessionDatabase();
   if (!db) {
     return {
       success: false,
-      error: '未指定数据库，请在参数中提供或设置 MYSQL_DATABASE 环境变量',
+      error: '未指定数据库，请在参数中提供或设置 MYSQL_DATABASE / 切换 use_database',
     };
   }
 

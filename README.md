@@ -115,6 +115,12 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 | `describe_table`    | 获取表字段结构                                    | `table`                                                 |
 | `show_indexes`      | 获取表索引                                        | `table`                                                 |
 | `show_create_table` | 获取建表 SQL                                      | `table`                                                 |
+| `list_connections`  | 列出已配置连接 id / host / port / database（无密码） | 无                                                      |
+| `use_connection`    | 切换活动连接（`MYSQL_MCP_CONNECTION_ID`）         | `connection_id`                                         |
+| `process_list`      | `SHOW FULL PROCESSLIST`（需 `MYSQL_MCP_OPS_TOOLS`） | 无                                                      |
+| `slow_query_status` | 慢查询相关变量（同上）                            | 无                                                      |
+| `kill_query`        | `KILL QUERY`（需 `MYSQL_MCP_KILL_QUERY`；只读模式禁用） | `thread_id`                                         |
+| `read_audit_log`    | 读审计日志尾部（需 `MYSQL_MCP_READ_AUDIT_TOOL` + `MCP_AUDIT_LOG`） | `lines?`                                    |
 
 ### MCP Resources
 
@@ -191,6 +197,11 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 | `MCP_DEBUG`              | false     | 开启调试信息（返回 executionTime）                   |
 | `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | 50  | Resource `mysql://schema/overview` 最多展开列信息的表数；`0` 表示仅表名；增大可接近「全量展开」（大库慎用） |
 | `MCP_AUDIT_LOG`          | -         | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
+| `MYSQL_MCP_CONNECTION_ID` | default | 活动连接 id；与 `list_connections` / `use_connection` 一致 |
+| `MYSQL_MCP_EXTRA_CONNECTIONS` | -   | JSON 数组，额外 DSN，如 `[{"id":"replica","url":"mysql://..."}]`；分项字段见代码 `parseExtraConnections` |
+| `MYSQL_MCP_OPS_TOOLS`    | false     | `true` 时注册 `process_list`、`slow_query_status` |
+| `MYSQL_MCP_KILL_QUERY`   | false     | `true` 时注册 `kill_query`（需 PROCESS；`MYSQL_READONLY` 时不可用） |
+| `MYSQL_MCP_READ_AUDIT_TOOL` | false  | `true` 且已设 `MCP_AUDIT_LOG` 时注册 `read_audit_log` |
 
 ### MCP 客户端配置
 

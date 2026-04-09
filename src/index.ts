@@ -15,11 +15,15 @@ import { config as dotenvConfig } from 'dotenv';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { createServer } from './server.js';
-import { testConnectionWithDetails, closePool, getConfigFromEnv } from './db/connection.js';
 import {
-  getDatabaseAllowlist,
-  validateStartupDatabaseAgainstAllowlist,
-} from './db/allowlist.js';
+  testConnectionWithDetails,
+  closePool,
+  getConfigFromEnv,
+  initConnectionPools,
+  pingConnectionById,
+  getExtraConnectionIds,
+} from './db/connection.js';
+import { getDatabaseAllowlist, validateStartupDatabaseAgainstAllowlist } from './db/allowlist.js';
 
 // 智能加载 .env 文件（按优先级）
 function loadEnvFile(): string {
@@ -77,6 +81,13 @@ async function main() {
     process.exit(1);
   }
 
+  try {
+    initConnectionPools();
+  } catch (e) {
+    log(`ERROR: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
+  }
+
   // 测试数据库连接
   const connectionResult = await testConnectionWithDetails();
 
@@ -89,6 +100,13 @@ async function main() {
   }
 
   log('Connected!');
+
+  for (const id of getExtraConnectionIds()) {
+    const ping = await pingConnectionById(id);
+    if (!ping.success) {
+      log(`WARN: 额外连接「${id}」不可用: ${ping.error || 'unknown'}`);
+    }
+  }
 
   const server = createServer();
   const transport = new StdioServerTransport();

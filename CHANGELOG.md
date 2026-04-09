@@ -4,6 +4,15 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-04-09
+
+### 新增
+
+- 工具 `explain_query`：对 EXPLAIN 结果附加中文告警（全表扫描、可能无索引、文件排序/临时表、估算行数过大等）
+- 多 DSN：`MYSQL_MCP_EXTRA_CONNECTIONS`（JSON 数组）+ 活动连接 `MYSQL_MCP_CONNECTION_ID`；工具 `list_connections`、`use_connection`；`use_database` 与 `list_tables` 等会话库按活动连接区分
+- 运维工具（可选）：`MYSQL_MCP_OPS_TOOLS` 启用 `process_list`、`slow_query_status`；`MYSQL_MCP_KILL_QUERY` 启用 `kill_query`（`MYSQL_READONLY` 时禁用）；`MYSQL_MCP_READ_AUDIT_TOOL` + `MCP_AUDIT_LOG` 启用 `read_audit_log`
+- 新增 `src/explainWarnings.ts`、`src/tools/connections.ts`、`src/tools/ops.ts`；单测 `test/explain-warnings.test.mjs`、`test/connections-config.test.mjs`
+
 ## [1.2.7] - 2026-04-09
 
 ### 优化

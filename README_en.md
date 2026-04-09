@@ -115,6 +115,12 @@ Paste the token into **GitHub → Repository → Settings → Secrets → `NPM_T
 | `describe_table`    | Get table column structure                                        | `table`                                                 |
 | `show_indexes`      | Get table indexes                                                 | `table`                                                 |
 | `show_create_table` | Get CREATE TABLE SQL                                              | `table`                                                 |
+| `list_connections`  | List configured connection ids (no passwords)                     | —                                                       |
+| `use_connection`    | Switch active connection (`MYSQL_MCP_CONNECTION_ID`)              | `connection_id`                                         |
+| `process_list`      | `SHOW FULL PROCESSLIST` (needs `MYSQL_MCP_OPS_TOOLS`)             | —                                                       |
+| `slow_query_status` | Slow-query-related variables (same flag)                          | —                                                       |
+| `kill_query`        | `KILL QUERY` (needs `MYSQL_MCP_KILL_QUERY`; disabled if read-only) | `thread_id`                                            |
+| `read_audit_log`    | Tail of audit log (needs `MYSQL_MCP_READ_AUDIT_TOOL` + `MCP_AUDIT_LOG`) | `lines?`                                          |
 
 ### MCP Resources
 
@@ -191,6 +197,11 @@ Create a `.env` file in the **project root** (copy from [`.env.example`](./.env.
 | `MCP_DEBUG`              | false     | Enable debug info (returns executionTime)                     |
 | `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | 50  | Max tables with column lines in Resource `mysql://schema/overview`; `0` = names only; increase for near-full expansion (large schemas: caution) |
 | `MCP_AUDIT_LOG`          | -         | Audit log file path (e.g. `./audit.log`), disabled if not set |
+| `MYSQL_MCP_CONNECTION_ID` | default | Active connection id; used with `list_connections` / `use_connection` |
+| `MYSQL_MCP_EXTRA_CONNECTIONS` | —   | JSON array of extra DSNs, e.g. `[{"id":"replica","url":"mysql://..."}]` |
+| `MYSQL_MCP_OPS_TOOLS`    | false     | If `true`, registers `process_list`, `slow_query_status` |
+| `MYSQL_MCP_KILL_QUERY`   | false     | If `true`, registers `kill_query` (needs PROCESS; not allowed when `MYSQL_READONLY`) |
+| `MYSQL_MCP_READ_AUDIT_TOOL` | false  | If `true` and `MCP_AUDIT_LOG` is set, registers `read_audit_log` |
 
 ### MCP Client Configuration
 

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { executeQuery, isReadOnlyQuery } from '../db/executor.js';
 import { ExecutionMode } from '../types/index.js';
 import { isDebugMode } from '../db/connection.js';
+import { explainRowsToWarnings } from '../explainWarnings.js';
 
 function formatExplainResult(rows: any[]): string {
   return rows
@@ -27,21 +28,9 @@ function formatExplainResult(rows: any[]): string {
 const queryInputSchema = {
   sql: z.string().describe('SQL'),
   params: z.array(z.any()).optional().describe('? 绑定值'),
-  limit: z
-    .number()
-    .int()
-    .min(1)
-    .max(10000)
-    .optional()
-    .describe('最大行数，覆盖 MYSQL_MAX_ROWS'),
+  limit: z.number().int().min(1).max(10000).optional().describe('最大行数，覆盖 MYSQL_MAX_ROWS'),
   page: z.number().int().min(1).optional().describe('页码，从 1'),
-  pageSize: z
-    .number()
-    .int()
-    .min(1)
-    .max(1000)
-    .optional()
-    .describe('每页行数，默认 20'),
+  pageSize: z.number().int().min(1).max(1000).optional().describe('每页行数，默认 20'),
 };
 
 /**
@@ -123,11 +112,18 @@ export function registerQueryTools(server: McpServer): void {
         };
       }
 
+      const rows = result.data || [];
+      let text = formatExplainResult(rows);
+      const warnings = explainRowsToWarnings(rows);
+      if (warnings.length > 0) {
+        text += `\n\n告警:\n${warnings.map((w) => `- ${w}`).join('\n')}`;
+      }
+
       return {
         content: [
           {
             type: 'text',
-            text: formatExplainResult(result.data || []),
+            text,
           },
         ],
       };
