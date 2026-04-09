@@ -7,6 +7,49 @@ import { DatabaseConfig } from '../types/index.js';
 let pool: Pool | null = null;
 
 /**
+ * 解析 `mysql://` / `mysql2://` 连接串（密码等请使用 URL 编码，如 `p%40ss`）。
+ * 与 `MYSQL_HOST` 等分项变量二选一；若同时存在，连接串中的主机/端口/用户/密码/路径库名优先，未给出的字段仍可由环境变量补全。
+ */
+export function parseMysqlConnectionUrl(urlStr: string): Partial<
+  Pick<DatabaseConfig, 'host' | 'port' | 'user' | 'password' | 'database'>
+> | null {
+  const trimmed = urlStr.trim();
+  if (!trimmed) return null;
+
+  let u: URL;
+  try {
+    u = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  const proto = u.protocol.replace(/:$/, '').toLowerCase();
+  if (proto !== 'mysql' && proto !== 'mysql2') {
+    return null;
+  }
+
+  const pathPart = u.pathname.replace(/^\//, '');
+  const database = pathPart.split('?')[0] || undefined;
+
+  return {
+    host: u.hostname || undefined,
+    port: u.port ? parseInt(u.port, 10) : undefined,
+    user: u.username !== '' ? decodeURIComponent(u.username) : undefined,
+    password: u.password !== '' ? decodeURIComponent(u.password) : undefined,
+    database: database || undefined,
+  };
+}
+
+function mergeUrlWithEnv(): Partial<
+  Pick<DatabaseConfig, 'host' | 'port' | 'user' | 'password' | 'database'>
+> {
+  const raw = process.env.MYSQL_URL || process.env.MYSQL_CONNECTION_STRING;
+  if (!raw) return {};
+  const parsed = parseMysqlConnectionUrl(raw);
+  return parsed ?? {};
+}
+
+/**
  * 从环境变量获取数据库配置
  */
 export function getConfigFromEnv(): DatabaseConfig {
@@ -14,12 +57,14 @@ export function getConfigFromEnv(): DatabaseConfig {
   const sslCert = process.env.MYSQL_SSL_CERT;
   const sslKey = process.env.MYSQL_SSL_KEY;
 
+  const fromUrl = mergeUrlWithEnv();
+
   return {
-    host: process.env.MYSQL_HOST || 'localhost',
-    port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || '',
-    database: process.env.MYSQL_DATABASE,
+    host: fromUrl.host ?? process.env.MYSQL_HOST ?? 'localhost',
+    port: fromUrl.port ?? parseInt(process.env.MYSQL_PORT || '3306', 10),
+    user: fromUrl.user ?? process.env.MYSQL_USER ?? 'root',
+    password: fromUrl.password ?? process.env.MYSQL_PASSWORD ?? '',
+    database: fromUrl.database ?? process.env.MYSQL_DATABASE,
     connectionLimit: parseInt(process.env.MYSQL_CONNECTION_LIMIT || '10', 10),
     queueLimit: parseInt(process.env.MYSQL_QUEUE_LIMIT || '0', 10),
     timeout: parseInt(process.env.MYSQL_TIMEOUT || '60000', 10),

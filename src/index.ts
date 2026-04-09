@@ -3,7 +3,7 @@
  * MySQL MCP Server 入口文件
  *
  * 环境变量配置（优先级从高到低）：
- * 1. 直接设置的环境变量
+ * 1. 直接设置的环境变量（含 MYSQL_URL / MYSQL_CONNECTION_STRING 解析出的连接字段）
  * 2. 当前工作目录下的 .env 文件（开发项目的 .env）
  * 3. MCP server 目录下的 .env 文件
  *

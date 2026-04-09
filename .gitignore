@@ -64,4 +64,7 @@ test-integration.mjs
 # 本地操作说明（不提交）
 NPM发布指南-勿提交.md
 
+# 与第三方 MCP 的本地对比笔记（不提交）
+COMPARISON_MCP_PROJECTS.md
+
 # package-lock.json  # 保留以支持 npm ci

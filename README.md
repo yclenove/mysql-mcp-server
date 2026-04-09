@@ -25,8 +25,6 @@
 - **查询超时与重试** — 可配置超时时间和自动重试策略
 - **SSL 支持** — 安全连接到远程数据库
 
-与常见开源 MySQL MCP（Python 单工具、单 SQL 工具、HTTP 多连接、Google Toolbox 等）的实现与功能对比，见 [COMPARISON_MCP_PROJECTS.md](./COMPARISON_MCP_PROJECTS.md)。
-
 ## 架构
 
 ```
@@ -176,6 +174,8 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 | `MYSQL_USER`             | root      | 用户名                                               |
 | `MYSQL_PASSWORD`         | -         | 密码                                                 |
 | `MYSQL_DATABASE`         | -         | 默认数据库                                           |
+| `MYSQL_URL`              | -         | `mysql://` 或 `mysql2://` 连接串；与下面分项二选一，密码请 URL 编码 |
+| `MYSQL_CONNECTION_STRING`| -         | 与 `MYSQL_URL` 等价别名（兼容其他工具命名）          |
 | `MYSQL_READONLY`         | false     | 只读模式                                             |
 | `MYSQL_MAX_ROWS`         | 100       | 单次返回最大行数                                     |
 | `MYSQL_QUERY_TIMEOUT`    | 30000     | 查询超时（毫秒）                                     |

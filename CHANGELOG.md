@@ -4,6 +4,17 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.5] - 2026-04-09
+
+### 新增
+
+- 支持通过 `MYSQL_URL` 或 `MYSQL_CONNECTION_STRING` 配置 `mysql://` / `mysql2://` 连接串；连接串中的主机/端口/用户/密码/路径库名优先于分项环境变量，未给出的字段仍可由 `MYSQL_HOST` 等补全
+- `parseMysqlConnectionUrl` 导出供测试与扩展；新增 `test/connection-url.test.mjs`
+
+### 变更
+
+- 移除已提交的 `COMPARISON_MCP_PROJECTS.md`；`.gitignore` 增加 `COMPARISON_MCP_PROJECTS.md`，便于本地保留对比笔记但不进 Git
+
 ## [1.2.4] - 2026-04-09
 
 ### 新增
@@ -14,7 +25,6 @@
 
 - README / README_en：补充 Cursor 下通过 `.cursor/mcp.json` 配置的步骤；说明项目根目录 `.env` 加载方式；新增 [`.env.example`](./.env.example) 模板
 - [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)：在 Cursor 对话中逐项验证 MCP（工具 / Resources / Prompts）的手动清单与总控提示词
-- [COMPARISON_MCP_PROJECTS.md](./COMPARISON_MCP_PROJECTS.md)：与 designcomputer、benborla、guangxiang、googleapis/mcp-toolbox 的源码级对比与优化计划（本地克隆路径见文内）
 
 ### 修复
 

@@ -25,8 +25,6 @@ A MySQL database tool server based on MCP (Model Context Protocol), enabling AI 
 - **Query timeout & retry** — configurable timeout and auto-retry strategy
 - **SSL support** — secure connections to remote databases
 
-For an implementation and feature comparison with other open-source MySQL MCP servers (Python single-tool, single-SQL-tool, HTTP multi-connection, Google MCP Toolbox, etc.), see [COMPARISON_MCP_PROJECTS.md](./COMPARISON_MCP_PROJECTS.md).
-
 ## Architecture
 
 ```
@@ -176,6 +174,8 @@ Create a `.env` file in the **project root** (copy from [`.env.example`](./.env.
 | `MYSQL_USER`             | root      | Username                                                      |
 | `MYSQL_PASSWORD`         | -         | Password                                                      |
 | `MYSQL_DATABASE`         | -         | Default database                                              |
+| `MYSQL_URL`              | -         | `mysql://` or `mysql2://` URI; alternative to discrete vars; URL-encode passwords |
+| `MYSQL_CONNECTION_STRING`| -         | Alias for `MYSQL_URL` (naming compatibility)                    |
 | `MYSQL_READONLY`         | false     | Read-only mode                                                |
 | `MYSQL_MAX_ROWS`         | 100       | Max rows per query                                            |
 | `MYSQL_QUERY_TIMEOUT`    | 30000     | Query timeout (ms)                                            |
