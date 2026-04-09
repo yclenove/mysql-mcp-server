@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.4] - 2026-04-09
+
+### 修复
+
+- `npm run test`：在 Node.js 24（如 GitHub Actions）下传入目录 `test/` 会被误当作单文件入口导致 `Cannot find module '.../test'`；改为显式列出 `test/*.test.mjs`，与 Windows / Linux CI 行为一致
+
 ## [1.2.3] - 2026-04-09
 
 ### 变更
