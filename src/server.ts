@@ -6,6 +6,7 @@ import { registerQueryTools } from './tools/query.js';
 import { registerModifyTools } from './tools/modify.js';
 import { registerSchemaTools } from './tools/schema.js';
 import { registerBatchTools } from './tools/batch.js';
+import { registerResources } from './resources.js';
 import packageJson from '../package.json' with { type: 'json' };
 
 /**
@@ -17,11 +18,11 @@ export function createServer(): McpServer {
     version: packageJson.version,
   });
 
-  // 注册各类工具
   registerQueryTools(server);
   registerModifyTools(server);
   registerSchemaTools(server);
   registerBatchTools(server);
+  registerResources(server);
 
   return server;
 }
@@ -35,6 +36,7 @@ MySQL MCP Server 提供的工具列表：
 
 【查询类】
 - query: 执行只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN）
+- explain_query: 分析 SQL 查询执行计划
 
 【修改类】
 - insert: 执行 INSERT 插入

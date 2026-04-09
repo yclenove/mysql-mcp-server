@@ -10,12 +10,14 @@ A MySQL database tool server based on MCP (Model Context Protocol), enabling AI 
 
 ## Features
 
-- **10 streamlined tools** — query, CRUD, batch operations, and metadata
+- **12 streamlined tools** — query, CRUD, batch operations, metadata, and query analysis
 - **Parameterized queries** — prevents SQL injection attacks
 - **Safety guards** — DELETE/UPDATE require WHERE; TRUNCATE/DROP/ALTER auto-blocked
 - **Read-only mode** — one switch for production safety
 - **Transaction protection** — batch operations auto-transact with rollback on failure
 - **Context-friendly** — compact JSON output, saves LLM token usage
+- **MCP Resources** — auto-discover database schema, fewer manual queries
+- **Docker support** — built-in Dockerfile for one-command deployment
 - **Query timeout & retry** — configurable timeout and auto-retry strategy
 - **SSL support** — secure connections to remote databases
 
@@ -26,12 +28,14 @@ MCP Client (Claude/Cursor)
     │  stdio JSON-RPC
     ▼
 MCP Server (server.ts)
-    ├── Query Tools ──────── query
+    ├── Query Tools ──────── query, explain_query
     ├── Modify Tools ─────── insert, update, delete
     ├── Batch Tools ──────── batch_execute, batch_insert
-    └── Schema Tools ─────── show_databases, list_tables,
-                              describe_table, show_indexes,
-                              show_create_table
+    ├── Schema Tools ─────── show_databases, list_tables,
+    │                         describe_table, show_indexes,
+    │                         show_create_table
+    └── Resources ─────────── schema/overview, schema/table/{name},
+                               databases
     │
     ▼
 SQL Executor (executor.ts) ← timeout/retry/safety checks
@@ -74,17 +78,26 @@ npm start
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `query` | Read-only queries (SELECT/SHOW/DESCRIBE/EXPLAIN) | `sql`, `params?` |
+| `query` | Read-only queries (SELECT/SHOW/DESCRIBE/EXPLAIN) | `sql`, `params?`, `limit?` |
+| `explain_query` | Analyze SQL query execution plan | `sql` |
 | `insert` | Execute INSERT | `sql`, `params?` |
 | `update` | Execute UPDATE (WHERE required) | `sql`, `params?` |
 | `delete` | Execute DELETE (WHERE required) | `sql`, `params?` |
 | `batch_execute` | Batch SQL execution (auto-transaction), max 50 | `statements[]` |
-| `batch_insert` | Batch insert records (auto-transaction), max 50 | `table`, `records[]` |
+| `batch_insert` | Batch insert records (multi-row VALUES, auto-transaction), max 50 | `table`, `records[]` |
 | `show_databases` | List all databases | none |
 | `list_tables` | List tables with info | `database?` |
 | `describe_table` | Get table column structure | `table` |
 | `show_indexes` | Get table indexes | `table` |
 | `show_create_table` | Get CREATE TABLE SQL | `table` |
+
+### MCP Resources
+
+| Resource URI | Description |
+|--------------|-------------|
+| `mysql://schema/overview` | Overview of all tables and columns in the current database |
+| `mysql://schema/table/{tableName}` | Detailed column structure for a specific table |
+| `mysql://databases` | List of all databases |
 
 ## Security
 
@@ -192,16 +205,20 @@ Add MCP server in Cursor settings with command `npx -y @wenit/mysql-mcp-server` 
 src/
 ├── index.ts           # Entry point, .env loading & startup
 ├── server.ts          # MCP Server creation & tool registration
+├── resources.ts       # MCP Resources (schema auto-discovery)
 ├── db/
 │   ├── connection.ts  # Connection pool, config
 │   └── executor.ts    # SQL executor, safety checks, timeout/retry
 ├── tools/
-│   ├── query.ts       # Query tool (query)
+│   ├── query.ts       # Query tools (query, explain_query)
 │   ├── modify.ts      # Modify tools (insert/update/delete)
 │   ├── batch.ts       # Batch tools (batch_execute/batch_insert)
 │   └── schema.ts      # Metadata tools
 └── types/
     └── index.ts       # TypeScript type definitions
+test/
+└── executor.test.mjs  # Unit tests
+Dockerfile             # Container deployment
 ```
 
 ### Commands
@@ -210,9 +227,21 @@ src/
 npm run dev        # Development mode (auto-compile)
 npm run build      # Build
 npm start          # Start server
+npm test           # Run unit tests
 npm run lint       # Lint check
 npm run format     # Format code
 npm run inspector  # MCP Inspector debug
+```
+
+### Docker Deployment
+
+```bash
+docker build -t mysql-mcp-server .
+docker run -e MYSQL_HOST=host.docker.internal \
+           -e MYSQL_USER=root \
+           -e MYSQL_PASSWORD=password \
+           -e MYSQL_DATABASE=mydb \
+           mysql-mcp-server
 ```
 
 ## Troubleshooting

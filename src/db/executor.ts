@@ -145,12 +145,12 @@ function checkDangerousOperation(sql: string): string | null {
 export async function executeQuery(
   sql: string,
   params?: any[],
-  mode: ExecutionMode = ExecutionMode.READWRITE
+  mode: ExecutionMode = ExecutionMode.READWRITE,
+  overrideMaxRows?: number
 ): Promise<QueryResult> {
   const startTime = Date.now();
 
   try {
-    // 检查只读模式
     if (mode === ExecutionMode.READONLY && !isReadOnlyQuery(sql)) {
       return {
         success: false,
@@ -158,7 +158,6 @@ export async function executeQuery(
       };
     }
 
-    // 检查危险操作
     const dangerCheck = checkDangerousOperation(sql);
     if (dangerCheck) {
       return {
@@ -169,24 +168,22 @@ export async function executeQuery(
 
     const pool = getPool();
     const { queryTimeout, maxRows } = getRuntimeConfig();
+    const effectiveMaxRows = Math.max(1, overrideMaxRows ?? maxRows);
     const [result] = await executeWithRetry<[unknown, unknown]>(
       () => withTimeout(pool.execute(sql, params) as Promise<[unknown, unknown]>, queryTimeout),
       isReadOnlyQuery(sql)
     );
     const executionTime = Date.now() - startTime;
 
-    // 判断结果类型
     if (Array.isArray(result)) {
-      // SELECT 查询结果
       return {
         success: true,
-        data: (result as RowDataPacket[]).slice(0, Math.max(1, maxRows)),
+        data: (result as RowDataPacket[]).slice(0, effectiveMaxRows),
         totalRows: (result as RowDataPacket[]).length,
-        truncated: (result as RowDataPacket[]).length > Math.max(1, maxRows),
+        truncated: (result as RowDataPacket[]).length > effectiveMaxRows,
         executionTime,
       };
     } else {
-      // INSERT/UPDATE/DELETE 结果
       const header = result as ResultSetHeader;
       return {
         success: true,

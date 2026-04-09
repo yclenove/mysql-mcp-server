@@ -10,12 +10,14 @@
 
 ## 特性
 
-- **10 个精简工具** — 查询、增删改、批量操作、元数据一应俱全
+- **12 个精简工具** — 查询、增删改、批量操作、元数据、性能分析一应俱全
 - **参数化查询** — 防止 SQL 注入攻击
 - **安全防护** — DELETE/UPDATE 必须带 WHERE，TRUNCATE/DROP/ALTER 自动拦截
 - **只读模式** — 一键开启，适合生产环境
 - **事务保护** — 批量操作自动事务，失败即回滚
 - **上下文友好** — 紧凑 JSON 输出，节省 LLM token 消耗
+- **MCP Resources** — 自动发现数据库 schema，减少手动查询
+- **容器化支持** — 内置 Dockerfile，一行命令部署
 - **查询超时与重试** — 可配置超时时间和自动重试策略
 - **SSL 支持** — 安全连接到远程数据库
 
@@ -26,12 +28,14 @@ MCP Client (Claude/Cursor)
     │  stdio JSON-RPC
     ▼
 MCP Server (server.ts)
-    ├── Query Tools ──────── query
+    ├── Query Tools ──────── query, explain_query
     ├── Modify Tools ─────── insert, update, delete
     ├── Batch Tools ──────── batch_execute, batch_insert
-    └── Schema Tools ─────── show_databases, list_tables,
-                              describe_table, show_indexes,
-                              show_create_table
+    ├── Schema Tools ─────── show_databases, list_tables,
+    │                         describe_table, show_indexes,
+    │                         show_create_table
+    └── Resources ─────────── schema/overview, schema/table/{name},
+                               databases
     │
     ▼
 SQL Executor (executor.ts) ← 超时/重试/安全检查
@@ -74,17 +78,26 @@ npm start
 
 | 工具 | 说明 | 参数 |
 |------|------|------|
-| `query` | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN） | `sql`, `params?` |
+| `query` | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN） | `sql`, `params?`, `limit?` |
+| `explain_query` | 分析 SQL 查询执行计划 | `sql` |
 | `insert` | 执行 INSERT | `sql`, `params?` |
 | `update` | 执行 UPDATE（必须含 WHERE） | `sql`, `params?` |
 | `delete` | 执行 DELETE（必须含 WHERE） | `sql`, `params?` |
 | `batch_execute` | 批量执行 SQL（自动事务），最多 50 条 | `statements[]` |
-| `batch_insert` | 批量插入记录（自动事务），最多 50 条 | `table`, `records[]` |
+| `batch_insert` | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]` |
 | `show_databases` | 列出所有数据库 | 无 |
 | `list_tables` | 列出表及其信息 | `database?` |
 | `describe_table` | 获取表字段结构 | `table` |
 | `show_indexes` | 获取表索引 | `table` |
 | `show_create_table` | 获取建表 SQL | `table` |
+
+### MCP Resources
+
+| 资源 URI | 说明 |
+|----------|------|
+| `mysql://schema/overview` | 当前数据库所有表及其字段结构概览 |
+| `mysql://schema/table/{tableName}` | 指定表的详细字段结构 |
+| `mysql://databases` | 所有数据库列表 |
 
 ## 安全特性
 
@@ -192,16 +205,20 @@ npm start
 src/
 ├── index.ts           # 入口，.env 加载与启动
 ├── server.ts          # MCP Server 创建与工具注册
+├── resources.ts       # MCP Resources（schema 自动发现）
 ├── db/
 │   ├── connection.ts  # 连接池管理、配置读取
 │   └── executor.ts    # SQL 执行器、安全检查、超时重试
 ├── tools/
-│   ├── query.ts       # 查询工具 (query)
+│   ├── query.ts       # 查询工具 (query, explain_query)
 │   ├── modify.ts      # 修改工具 (insert/update/delete)
 │   ├── batch.ts       # 批量工具 (batch_execute/batch_insert)
 │   └── schema.ts      # 元数据工具
 └── types/
     └── index.ts       # TypeScript 类型定义
+test/
+└── executor.test.mjs  # 单元测试
+Dockerfile             # 容器化部署
 ```
 
 ### 常用命令
@@ -210,9 +227,21 @@ src/
 npm run dev        # 开发模式（自动编译）
 npm run build      # 编译
 npm start          # 启动
+npm test           # 运行单元测试
 npm run lint       # 代码检查
 npm run format     # 格式化
 npm run inspector  # MCP Inspector 调试
+```
+
+### Docker 部署
+
+```bash
+docker build -t mysql-mcp-server .
+docker run -e MYSQL_HOST=host.docker.internal \
+           -e MYSQL_USER=root \
+           -e MYSQL_PASSWORD=password \
+           -e MYSQL_DATABASE=mydb \
+           mysql-mcp-server
 ```
 
 ## 故障排查

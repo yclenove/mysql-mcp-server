@@ -189,64 +189,70 @@ export function registerBatchTools(server: McpServer): void {
         }
       }
 
-      let result;
-      try {
-        const statements = records.map((record, index) => {
-          const columns = Object.keys(record);
-          if (
-            columns.length !== firstColumns.length ||
-            !firstColumns.every((col) => Object.prototype.hasOwnProperty.call(record, col))
-          ) {
-            throw new Error(`第 ${index + 1} 条记录字段不一致，批量插入要求所有记录字段完全一致`);
-          }
-
-          const values = Object.values(record);
-          const placeholders = values.map(() => '?').join(', ');
-          const escapedColumns = columns.map((column) => escapeIdentifier(column)).join(', ');
-          const sql = `INSERT INTO ${escapeIdentifier(table)} (${escapedColumns}) VALUES (${placeholders})`;
-          return { sql, params: values };
-        });
-        result = await executeBatch(statements, ExecutionMode.READWRITE);
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `错误：${error instanceof Error ? error.message : '批量插入构建失败'}`,
-            },
-          ],
-          isError: true,
-        };
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i]!;
+        const columns = Object.keys(record);
+        if (
+          columns.length !== firstColumns.length ||
+          !firstColumns.every((col) => Object.prototype.hasOwnProperty.call(record, col))
+        ) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `错误：第 ${i + 1} 条记录字段不一致，批量插入要求所有记录字段完全一致`,
+              },
+            ],
+            isError: true,
+          };
+        }
       }
 
-      if (!result.success) {
+      try {
+        const escapedColumns = firstColumns.map((c) => escapeIdentifier(c)).join(', ');
+        const rowPlaceholder = `(${firstColumns.map(() => '?').join(', ')})`;
+        const allPlaceholders = records.map(() => rowPlaceholder).join(', ');
+        const allValues = records.flatMap((record) => firstColumns.map((col) => record[col]));
+
+        const sql = `INSERT INTO ${escapeIdentifier(table)} (${escapedColumns}) VALUES ${allPlaceholders}`;
+        const result = await executeBatch([{ sql, params: allValues }], ExecutionMode.READWRITE);
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({ error: result.error, insertedCount: 0 }),
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const header = result.results[0];
         return {
           content: [
             {
               type: 'text',
               text: JSON.stringify({
-                error: result.error,
-                insertedCount: result.successCount,
-                failedCount: result.errorCount,
+                table,
+                insertedCount: header?.affectedRows ?? records.length,
+                firstInsertId: header?.insertId,
               }),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `错误：${error instanceof Error ? error.message : '批量插入失败'}`,
             },
           ],
           isError: true,
         };
       }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              table,
-              insertedCount: result.successCount,
-              firstInsertId: result.results[0]?.insertId,
-            }),
-          },
-        ],
-      };
     }
   );
 }

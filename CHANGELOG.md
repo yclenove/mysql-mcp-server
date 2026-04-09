@@ -26,6 +26,15 @@
 - 新增 `MCP_DEBUG` 环境变量，开启调试信息输出
 - 新增 `CHANGELOG.md` 更新日志文件
 - 新增 `.cursor/rules/project-conventions.mdc` 项目开发约定
+- `query` 工具新增 `limit` 参数，LLM 可按需控制返回行数（1-10000）
+- 新增 `explain_query` 工具，分析 SQL 查询执行计划用于性能优化
+- 新增 MCP Resources：`mysql://schema/overview`（schema 概览）、`mysql://schema/table/{name}`（表结构）、`mysql://databases`（数据库列表）
+- 新增 Dockerfile 和 .dockerignore，支持容器化部署
+- 新增单元测试（30 个用例覆盖 executor 安全检查、标识符校验等）
+
+### 优化
+
+- `batch_insert` 优化为多行 `INSERT INTO ... VALUES (...), (...), ...` 语法，减少 SQL 往返次数
 
 ## [1.0.1] - 2026-04-09
 
