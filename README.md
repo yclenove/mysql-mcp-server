@@ -6,60 +6,72 @@
 
 **简体中文 | [English](./README_en.md)**
 
-基于 MCP（Model Context Protocol）协议的 MySQL 数据库工具服务器，让 AI 助手能够安全地查询和操作 MySQL 数据库。
+基于 [MCP（Model Context Protocol）](https://modelcontextprotocol.io/) 的 MySQL 数据库工具服务，供 Claude / Cursor 等客户端通过 stdio 安全地查询与（可选）写入数据。
 
-## 特性
+---
 
-- **16 个工具 + 4 个 Prompts** — 查询、增删改、DDL、存储过程、批量、元数据、连接诊断一应俱全
-- **参数化查询** — 防止 SQL 注入攻击
-- **安全防护** — DELETE/UPDATE 必须带 WHERE，TRUNCATE/DROP/ALTER 自动拦截
-- **只读模式** — 一键开启，适合生产环境
-- **事务保护** — 批量操作自动事务，失败即回滚
-- **上下文友好** — 紧凑 JSON 输出，内置分页，节省 LLM token 消耗
-- **MCP Resources** — 自动发现数据库 schema 和连接池状态
-- **MCP Prompts** — 预置 Prompts 引导 LLM 分析表结构、生成查询、优化性能
-- **审计日志** — 可选记录所有 SQL 执行到文件
-- **容器化支持** — 内置 Dockerfile，一行命令部署
-- **友好错误提示** — 常见 MySQL 错误码自动映射为中文诊断信息
-- **SQL 长度防护** — 默认 100KB 上限，防止超大 SQL 攻击
-- **查询超时与重试** — 可配置超时时间和自动重试策略
-- **SSL 支持** — 安全连接到远程数据库
+## 目录
+
+- [特性概览](#特性概览)
+- [架构](#架构)
+- [快速开始](#快速开始)
+- [工具一览](#工具一览)
+- [Resources 与 Prompts](#resources-与-prompts)
+- [安全与只读](#安全与只读)
+- [配置说明](#配置说明)
+- [客户端接入](#客户端接入)
+- [本地开发与本仓库调试](#本地开发与本仓库调试)
+- [开发与构建](#开发与构建)
+- [故障排查](#故障排查)
+- [更新日志](#更新日志)
+
+---
+
+## 特性概览
+
+- **工具**：核心约 **20+** 个 MCP 工具；另可按环境变量启用多连接、运维、慢日志尾部等（见 [工具一览](#工具一览)）。
+- **安全**：参数化查询；DELETE/UPDATE 须带 WHERE；拦截 TRUNCATE / DROP / ALTER；可选库白名单 `MYSQL_DATABASE_ALLOWLIST`。
+- **只读模式**：`MYSQL_READONLY=true` 时工具层 + 会话层 `transaction_read_only` 双保险。
+- **多 DSN**：`MYSQL_MCP_EXTRA_CONNECTIONS` + `list_connections` / `use_connection`。
+- **EXPLAIN**：行式计划 + 中文告警；可选 `MYSQL_MCP_EXPLAIN_JSON` 解析 `FORMAT=JSON`。
+- **Token**：`schema/overview` 可限制展开表数；`MCP_QUERY_RESULT_HINT` 可返回结果近似字符数。
+- **审计 / 运维**：可选审计日志、进程列表、慢查询变量、慢日志文件尾部等（均需显式开关）。
+- **资源与提示**：4 类 Resource、4 个 Prompt；详见下文。
+
+---
 
 ## 架构
 
 ```
-MCP Client (Claude/Cursor)
+MCP Client (Claude / Cursor)
     │  stdio JSON-RPC
     ▼
 MCP Server (server.ts)
-    ├── Query Tools ──────── query, explain_query
-    ├── Modify Tools ─────── insert, update, delete
-    ├── DDL Tools ─────────── create_table
-    ├── Batch Tools ──────── batch_execute, batch_insert
-    ├── Schema Tools ─────── test_connection, use_database,
-    │                         show_databases, list_tables,
-    │                         describe_table, show_indexes,
-    │                         show_create_table
-    ├── Resources ─────────── schema/overview, schema/table/{name},
-    │                          databases, status/pool
-    └── Prompts ──────────── analyze-table, generate-query,
-                               optimize-query, data-overview
-    │
+    ├── Query ───────────── query, explain_query
+    ├── Modify ──────────── insert, update, delete, call_procedure
+    ├── Schema ──────────── test_connection, use_database, show_databases,
+    │                        list_tables, describe_table, show_indexes, show_create_table
+    ├── Connections ─────── list_connections, use_connection
+    ├── Ops（可选）──────── process_list, slow_query_status, kill_query,
+    │                        read_audit_log, read_slow_query_log
+    ├── Batch ───────────── batch_execute, batch_insert
+    ├── DDL ─────────────── create_table
+    ├── Resources ───────── schema/overview, schema/table/{name},
+    │                      databases, status/pool
+    └── Prompts ─────────── analyze-table, generate-query, optimize-query, data-overview
     ▼
-SQL Executor (executor.ts) ← 超时/重试/安全检查/审计日志
-    │
+Executor (executor.ts) ← 超时 / 重试 / 危险语句 / 审计
     ▼
-Connection Pool (connection.ts) ← mysql2 连接池
-    │
+Connection Pool (connection.ts) ← 多池、只读会话、mysql2
     ▼
-MySQL Database
+MySQL / MariaDB
 ```
+
+---
 
 ## 快速开始
 
-### 使用 npx（推荐）
-
-无需安装，直接运行：
+### npx（推荐）
 
 ```bash
 npx -y @yclenove/mysql-mcp-server
@@ -72,7 +84,7 @@ npm install -g @yclenove/mysql-mcp-server
 mysql-mcp-server
 ```
 
-### 从源码构建
+### 从源码
 
 ```bash
 git clone https://github.com/yclenove/mysql-mcp-server.git
@@ -84,136 +96,163 @@ npm start
 
 ### 自行发布 / 换包名
 
-npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysql-mcp-server`）。**只有登录到拥有该作用域的 npm 账号**后才能发布；若你的 npm 用户名不是 `yclenove`，请把 `name` 改成 `@你的npm用户名/mysql-mcp-server`，再执行 `npm publish --access public`。Cursor / Claude 里请把 `npx` 的参数字符串改成与你的包名一致。
+包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysql-mcp-server`）。发布需对应 npm 作用域权限；换用户名请改 `name` 后 `npm publish --access public`，客户端 `npx` 参数需同步。
 
-#### GitHub Actions 发布（避免 `npm error code EOTP`）
+**GitHub Actions 发布（避免 `npm error code EOTP`）**：若开启 2FA，请在 npm 创建 **Granular** 或 **Automation** 类 token，写入仓库 Secret `NPM_TOKEN`。详见 `.github/workflows/publish.yml` 顶部注释。
 
-若仓库已开启 2FA，在 **GitHub → Settings → Secrets → `NPM_TOKEN`** 里不能使用「每次发布都要在终端输 OTP」的普通令牌。请改为：
+---
 
-1. 登录 [npm Access Tokens](https://www.npmjs.com/settings/~/tokens)，新建 **Granular Access Token**：对本包或用户授予 **Read and Write**，并在发布相关权限中勾选 **允许在自动化/CI 场景绕过 2FA**（具体英文以 npm 页面为准，如 _Bypass two-factor authentication_）。
-2. 或新建 **Classic Token**，类型选 **Automation**（专为 CI 设计，发布时不索要 OTP）。
+## 工具一览
 
-将生成的一次性 token 完整粘贴到 `NPM_TOKEN`，再重新运行 **Publish to NPM** 工作流。详见 `.github/workflows/publish.yml` 文件顶部注释。
+### 查询与分析
 
-## 工具 API
+| 工具 | 说明 | 参数 |
+| --- | --- | --- |
+| `query` | 只读 SELECT/SHOW/DESCRIBE/EXPLAIN；? 占位；`limit` 或 `page`+`pageSize` | `sql`, `params?`, `limit?`, `page?`, `pageSize?` |
+| `explain_query` | 执行计划；默认行式 EXPLAIN + 告警；`MYSQL_MCP_EXPLAIN_JSON=true` 时用 FORMAT=JSON | `sql` |
 
-| 工具                | 说明                                              | 参数                                                    |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------------- |
-| `query`             | 只读查询（SELECT/SHOW/DESCRIBE/EXPLAIN）          | `sql`, `params?`, `limit?`, `page?`, `pageSize?`        |
-| `explain_query`     | 分析 SQL 查询执行计划                             | `sql`                                                   |
-| `insert`            | 执行 INSERT                                       | `sql`, `params?`                                        |
-| `update`            | 执行 UPDATE（必须含 WHERE）                       | `sql`, `params?`                                        |
-| `delete`            | 执行 DELETE（必须含 WHERE）                       | `sql`, `params?`                                        |
-| `call_procedure`    | 调用存储过程                                      | `procedure`, `params?`                                  |
-| `create_table`      | 创建新表（只读模式下禁用）                        | `table`, `columns[]`, `comment?`, `engine?`, `charset?` |
-| `batch_execute`     | 批量执行 SQL（自动事务），最多 50 条              | `statements[]`                                          |
-| `batch_insert`      | 批量插入记录（多行 VALUES，自动事务），最多 50 条 | `table`, `records[]`                                    |
-| `test_connection`   | 测试数据库连接状态和服务器版本                    | 无                                                      |
-| `use_database`      | 切换当前数据库                                    | `database`                                              |
-| `show_databases`    | 列出所有数据库                                    | 无                                                      |
-| `list_tables`       | 列出表及其信息                                    | `database?`                                             |
-| `describe_table`    | 获取表字段结构                                    | `table`                                                 |
-| `show_indexes`      | 获取表索引                                        | `table`                                                 |
-| `show_create_table` | 获取建表 SQL                                      | `table`                                                 |
-| `list_connections`  | 列出已配置连接 id / host / port / database（无密码） | 无                                                      |
-| `use_connection`    | 切换活动连接（`MYSQL_MCP_CONNECTION_ID`）         | `connection_id`                                         |
-| `process_list`      | `SHOW FULL PROCESSLIST`（需 `MYSQL_MCP_OPS_TOOLS`） | 无                                                      |
-| `slow_query_status` | 慢查询相关变量（同上）                            | 无                                                      |
-| `kill_query`        | `KILL QUERY`（需 `MYSQL_MCP_KILL_QUERY`；只读模式禁用） | `thread_id`                                         |
-| `read_audit_log`    | 读审计日志尾部（需 `MYSQL_MCP_READ_AUDIT_TOOL` + `MCP_AUDIT_LOG`） | `lines?`                                    |
-| `read_slow_query_log` | 读慢日志文件尾部（需 `MYSQL_MCP_READ_SLOW_LOG` + `MYSQL_MCP_SLOW_LOG_PATH`） | `lines?`                          |
+### 元数据与连接
+
+| 工具 | 说明 | 参数 |
+| --- | --- | --- |
+| `test_connection` | Ping、version、当前 `connectionId` / database | 无 |
+| `use_database` | `USE` 切换库（受白名单约束） | `database` |
+| `show_databases` | 列出库（受白名单过滤） | 无 |
+| `list_tables` | 表列表与元数据 | `database?` |
+| `describe_table` | 列结构 | `table` |
+| `show_indexes` | 索引 | `table` |
+| `show_create_table` | 建表语句 | `table` |
+| `list_connections` | 已配置连接 id / host / port / database（无密码） | 无 |
+| `use_connection` | 切换活动连接 | `connection_id` |
+
+### 写入与批量
+
+| 工具 | 说明 | 参数 |
+| --- | --- | --- |
+| `insert` / `update` / `delete` | 参数化；UPDATE/DELETE 必须含 WHERE | `sql`, `params?` |
+| `call_procedure` | 存储过程 | `procedure`, `params?` |
+| `batch_execute` | 事务批量，最多 50 条 | `statements[]` |
+| `batch_insert` | 批量插入，最多 50 行 | `table`, `records[]` |
+| `create_table` | 建表（只读模式禁用） | `table`, `columns[]`, … |
+
+### 可选运维（需环境变量）
+
+| 工具 | 前置条件 |
+| --- | --- |
+| `process_list` | `MYSQL_MCP_OPS_TOOLS=true`；行数上限 `MYSQL_MCP_PROCESS_LIST_MAX` |
+| `slow_query_status` | `MYSQL_MCP_OPS_TOOLS=true` |
+| `kill_query` | `MYSQL_MCP_KILL_QUERY=true`；`MYSQL_READONLY` 时不可用 |
+| `read_audit_log` | `MYSQL_MCP_READ_AUDIT_TOOL=true` 且已设 `MCP_AUDIT_LOG` |
+| `read_slow_query_log` | `MYSQL_MCP_READ_SLOW_LOG=true` 且已设 `MYSQL_MCP_SLOW_LOG_PATH` |
+
+---
+
+## Resources 与 Prompts
 
 ### MCP Resources
 
-| 资源 URI                           | 说明                                                  |
-| ---------------------------------- | ----------------------------------------------------- |
-| `mysql://schema/overview`          | 当前库表与列摘要（无列注释）；表多默认仅前 50 张展开列，可调 `MCP_SCHEMA_OVERVIEW_MAX_TABLES`；详单用 `mysql://schema/table/{表名}` 或 `describe_table` |
-| `mysql://schema/table/{tableName}` | 单表列结构（JSON）                                    |
-| `mysql://databases`                | 库名 JSON 数组                                        |
-| `mysql://status/pool`              | 连接池队列与连接数                                    |
+| 资源 URI | 说明 |
+| --- | --- |
+| `mysql://schema/overview` | 当前库表与列摘要；大库可限制展开表数 `MCP_SCHEMA_OVERVIEW_MAX_TABLES` |
+| `mysql://schema/table/{tableName}` | 单表列 JSON |
+| `mysql://databases` | 库名 JSON 数组（受白名单过滤） |
+| `mysql://status/pool` | 连接池状态 |
 
 ### MCP Prompts
 
-| Prompt           | 说明                                    | 参数                     |
-| ---------------- | --------------------------------------- | ------------------------ |
-| `analyze-table`  | 表结构/索引/行数分析与优化建议          | `table`                  |
-| `generate-query` | 自然语言 → 参数化 SELECT + `query` 执行 | `description`, `tables?` |
-| `optimize-query` | EXPLAIN + 索引检查 + 改写建议           | `sql`                    |
-| `data-overview`  | 库级：表清单、行数、抽样行              | 无                       |
+| Prompt | 说明 |
+| --- | --- |
+| `analyze-table` | 表结构 / 索引 / 行数分析 |
+| `generate-query` | 自然语言 → 参数化 SELECT + `query` |
+| `optimize-query` | EXPLAIN + 索引与改写建议 |
+| `data-overview` | 库级概览 |
 
-## 安全特性
+手动验收清单见 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)。
 
-### 参数化查询
+---
 
-所有工具均使用参数化查询防止 SQL 注入：
+## 安全与只读
 
-```json
-{ "sql": "SELECT * FROM users WHERE id = ?", "params": [1] }
-```
+- **参数化**：所有工具使用参数化执行，防止 SQL 注入。
+- **危险语句**：DELETE/UPDATE 须含 WHERE；TRUNCATE / DROP / ALTER 拦截。
+- **只读模式** `MYSQL_READONLY=true`：
+  1. 写入类工具拒绝；
+  2. 批量中非只读语句拒绝；
+  3. 执行层校验；
+  4. 新建池连接执行 `SET SESSION transaction_read_only = 1`（MySQL 5.6+ / MariaDB 10.0+；仅会话级，与全局 `read_only` 无关）。
 
-### 危险操作拦截
 
-| 操作            | 拦截规则            |
-| --------------- | ------------------- |
-| DELETE / UPDATE | 必须包含 WHERE 子句 |
-| TRUNCATE        | 始终拦截            |
-| DROP            | 始终拦截            |
-| ALTER           | 始终拦截            |
+---
 
-### 只读模式
+## 配置说明
 
-设置 `MYSQL_READONLY=true` 启用只读模式，三层防护确保安全：
+在**项目根目录**放置 `.env`（可复制 [`.env.example`](./.env.example)），启动时自动加载；**勿提交 `.env`**。若 shell 已存在同名变量，通常优先生效（dotenv 默认不覆盖已有值）。
 
-1. **工具层**：insert/update/delete 工具直接拒绝
-2. **批量层**：batch_execute 过滤非查询语句
-3. **执行层**：底层执行器最终校验
-4. **会话层**：新建池连接时执行 `SET SESSION transaction_read_only = 1`（MySQL 5.6+ / MariaDB 10.0+；与服务器 `read_only` 全局变量无关，仅本会话）
+### 连接与账号
 
-## 配置
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `MYSQL_HOST` | localhost | 主机 |
+| `MYSQL_PORT` | 3306 | 端口 |
+| `MYSQL_USER` | root | 用户 |
+| `MYSQL_PASSWORD` | - | 密码 |
+| `MYSQL_DATABASE` | - | 默认库 |
+| `MYSQL_URL` / `MYSQL_CONNECTION_STRING` | - | `mysql://` 或 `mysql2://`；与分项二选一；密码请 URL 编码 |
 
-可在**项目根目录**创建 `.env`（可复制 [`.env.example`](./.env.example)），启动时会自动加载；**勿将 `.env` 提交到 Git**。若本机已设置同名 `MYSQL_*` 环境变量，则优先使用环境变量（dotenv 默认不覆盖已有值）。
+### 安全与白名单
 
-### 环境变量
+| 变量 | 说明 |
+| --- | --- |
+| `MYSQL_DATABASE_ALLOWLIST` | 逗号分隔库名；影响启动校验、`use_database`、`list_tables`（指定库）、`show_databases`、Resource `mysql://databases` |
+| `MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS` | `true` 且已设白名单时，校验每个额外 DSN 的默认库 |
+| `MYSQL_MAX_SQL_LENGTH` | 单条 SQL 最大字符数（默认 102400） |
 
-| 变量                     | 默认值    | 说明                                                 |
-| ------------------------ | --------- | ---------------------------------------------------- |
-| `MYSQL_HOST`             | localhost | MySQL 主机                                           |
-| `MYSQL_PORT`             | 3306      | 端口                                                 |
-| `MYSQL_USER`             | root      | 用户名                                               |
-| `MYSQL_PASSWORD`         | -         | 密码                                                 |
-| `MYSQL_DATABASE`         | -         | 默认数据库                                           |
-| `MYSQL_DATABASE_ALLOWLIST` | -       | 可选，逗号分隔库名白名单（仅字母数字下划线）；未设不限制；影响启动校验、`use_database` / `list_tables`（指定库时）、`show_databases` 与 Resource `mysql://databases` |
-| `MYSQL_URL`              | -         | `mysql://` 或 `mysql2://` 连接串；与下面分项二选一，密码请 URL 编码 |
-| `MYSQL_CONNECTION_STRING`| -         | 与 `MYSQL_URL` 等价别名（兼容其他工具命名）          |
-| `MYSQL_READONLY`         | false     | 只读模式                                             |
-| `MYSQL_MAX_ROWS`         | 100       | 单次返回最大行数                                     |
-| `MYSQL_QUERY_TIMEOUT`    | 30000     | 查询超时（毫秒）                                     |
-| `MYSQL_RETRY_COUNT`      | 2         | 只读查询重试次数                                     |
-| `MYSQL_RETRY_DELAY_MS`   | 200       | 重试基础延时（指数退避）                             |
-| `MYSQL_CONNECTION_LIMIT` | 10        | 连接池大小                                           |
-| `MYSQL_TIMEOUT`          | 60000     | 连接超时（毫秒）                                     |
-| `MYSQL_SSL_CA`           | -         | SSL CA 证书路径                                      |
-| `MYSQL_SSL_CERT`         | -         | SSL 客户端证书路径                                   |
-| `MYSQL_SSL_KEY`          | -         | SSL 客户端密钥路径                                   |
-| `MYSQL_MAX_SQL_LENGTH`   | 102400    | SQL 语句最大长度（字符），超出拒绝执行               |
-| `MCP_DEBUG`              | false     | 开启调试信息（返回 executionTime）                   |
-| `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | 50  | Resource `mysql://schema/overview` 最多展开列信息的表数；`0` 表示仅表名；增大可接近「全量展开」（大库慎用） |
-| `MCP_AUDIT_LOG`          | -         | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
-| `MYSQL_MCP_CONNECTION_ID` | default | 活动连接 id；与 `list_connections` / `use_connection` 一致 |
-| `MYSQL_MCP_EXTRA_CONNECTIONS` | -   | JSON 数组，额外 DSN，如 `[{"id":"replica","url":"mysql://..."}]`；分项字段见代码 `parseExtraConnections` |
-| `MYSQL_MCP_OPS_TOOLS`    | false     | `true` 时注册 `process_list`、`slow_query_status` |
-| `MYSQL_MCP_KILL_QUERY`   | false     | `true` 时注册 `kill_query`（需 PROCESS；`MYSQL_READONLY` 时不可用） |
-| `MYSQL_MCP_READ_AUDIT_TOOL` | false  | `true` 且已设 `MCP_AUDIT_LOG` 时注册 `read_audit_log` |
-| `MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS` | false | `true` 且配置了 `MYSQL_DATABASE_ALLOWLIST` 时，校验每个额外 DSN 的默认库在白名单内 |
-| `MCP_QUERY_RESULT_HINT` | false | `true` 时 `query` 返回 JSON 含 `approxChars`（结果序列化字符数近似值） |
-| `MYSQL_MCP_EXPLAIN_JSON` | false | `true` 时 `explain_query` 使用 `EXPLAIN FORMAT=JSON` 并解析告警 |
-| `MYSQL_MCP_PROCESS_LIST_MAX` | 100 | `process_list` 最大行数（上限 5000） |
-| `MYSQL_MCP_READ_SLOW_LOG` | false | `true` 且配置 `MYSQL_MCP_SLOW_LOG_PATH` 时注册 `read_slow_query_log` |
-| `MYSQL_MCP_SLOW_LOG_PATH` | - | 服务器慢查询日志路径（需进程可读） |
+### 执行与连接池
 
-### MCP 客户端配置
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `MYSQL_MAX_ROWS` | 100 | 单次最大返回行数 |
+| `MYSQL_QUERY_TIMEOUT` | 30000 | 查询超时（毫秒） |
+| `MYSQL_RETRY_COUNT` | 2 | 只读重试次数 |
+| `MYSQL_RETRY_DELAY_MS` | 200 | 重试退避基数 |
+| `MYSQL_CONNECTION_LIMIT` | 10 | 连接池大小 |
+| `MYSQL_TIMEOUT` | 60000 | 连接超时（毫秒） |
+| `MYSQL_SSL_CA` / `SSL_CERT` / `SSL_KEY` | - | SSL |
 
-#### Claude Desktop
+### 只读、调试与 MCP
+
+| 变量 | 说明 |
+| --- | --- |
+| `MYSQL_READONLY` | `true` 只读模式 |
+| `MCP_DEBUG` | `true` 时工具返回 `executionTime` |
+| `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | 默认 50；`0` 仅表名；Resource `schema/overview` |
+| `MCP_AUDIT_LOG` | 审计日志文件路径 |
+| `MCP_QUERY_RESULT_HINT` | `true` 时 `query` 返回 `approxChars` |
+| `MYSQL_MCP_EXPLAIN_JSON` | `true` 时 `explain_query` 使用 `EXPLAIN FORMAT=JSON` |
+
+### 多 DSN
+
+| 变量 | 说明 |
+| --- | --- |
+| `MYSQL_MCP_EXTRA_CONNECTIONS` | JSON 数组，如 `[{"id":"replica","url":"mysql://..."}]` |
+| `MYSQL_MCP_CONNECTION_ID` | 当前活动连接 id，默认 `default` |
+
+### 运维（可选）
+
+| 变量 | 说明 |
+| --- | --- |
+| `MYSQL_MCP_OPS_TOOLS` | `true` → `process_list`、`slow_query_status` |
+| `MYSQL_MCP_PROCESS_LIST_MAX` | `process_list` 最大行数（默认 100，上限 5000） |
+| `MYSQL_MCP_KILL_QUERY` | `true` → `kill_query` |
+| `MYSQL_MCP_READ_AUDIT_TOOL` | `true` 且已设 `MCP_AUDIT_LOG` → `read_audit_log` |
+| `MYSQL_MCP_READ_SLOW_LOG` | `true` 且已设 `MYSQL_MCP_SLOW_LOG_PATH` → `read_slow_query_log` |
+| `MYSQL_MCP_SLOW_LOG_PATH` | 慢查询日志文件路径（进程需可读） |
+
+---
+
+## 客户端接入
+
+### Claude Desktop
 
 编辑 `claude_desktop_config.json`（[macOS] `~/Library/Application Support/Claude/`、[Windows] `%APPDATA%/Claude/`）：
 
@@ -235,13 +274,13 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 }
 ```
 
-#### Cursor
+### Cursor
 
-1. **推荐（本仓库已提供）**：将 [`mcp.json`](./.cursor/mcp.json) 置于项目根目录 `.cursor/mcp.json`（或复制到你的用户目录 `~/.cursor/mcp.json`）。其中使用全局安装的 `mysql-mcp-server`；连接信息放在**项目根目录**的 `.env`（见上「配置」），勿把 `.env` 提交到 Git。
-2. **等价方式**：在 Cursor **Settings → Tools & MCP** 中添加服务器，命令为 `npx -y @yclenove/mysql-mcp-server`，并配置相同的环境变量。
-3. **在 Cursor 里逐项验证 MCP**：见 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)（对话清单：16 个工具、Resources、Prompts）。
+1. 将 MCP 配置写入项目 `.cursor/mcp.json` 或用户级 `~/.cursor/mcp.json`。
+2. 连接信息放在**项目根目录** `.env`（勿提交密码）。
+3. 全功能手动测试见 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md)。
 
-#### 生产环境（只读模式）
+### 生产只读示例
 
 ```json
 {
@@ -261,50 +300,78 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 }
 ```
 
-## 开发
+---
 
-维护或扩展 MCP 工具/资源/Prompts 前请阅读根目录 [`AGENTS.md`](./AGENTS.md)（**token 节约**与描述约定）。
+## 本地开发与本仓库调试
 
-### 项目结构
+1. **安装与编译**
+
+   ```bash
+   npm install
+   npm run build
+   ```
+
+2. **方式 A：本仓库 `.cursor/mcp.json`（推荐）**  
+   已配置为使用 **`node` + `${workspaceFolder}/dist/index.js`**，直接打开本仓库根目录后重载 MCP，即可使用当前构建产物（无需先 `npm link`）。若你的 Cursor 版本不支持 `${workspaceFolder}`，可改用方式 B。
+
+3. **方式 B：全局命令 `mysql-mcp-server`**
+
+   ```bash
+   npm install -g .
+   npm link
+   ```
+
+   在 MCP 配置里将 `command` 设为 `mysql-mcp-server`（与旧版 README 一致）。
+
+4. **验证**  
+   在 Cursor 中启用 MCP 后，按 [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md) 逐项调用工具；或执行 `npm test`、`npm run inspector` 调试。
+
+---
+
+## 开发与构建
+
+扩展工具 / Resource / Prompt 前请阅读 [AGENTS.md](./AGENTS.md)（token 与描述约定）。
+
+### 目录结构（节选）
 
 ```
 src/
-├── index.ts           # 入口，.env 加载与启动
-├── server.ts          # MCP Server 创建与注册
-├── resources.ts       # MCP Resources（schema/连接池）
-├── prompts.ts         # MCP Prompts（预置引导）
-├── audit.ts           # 查询审计日志
+├── index.ts           # 入口，加载 .env
+├── server.ts          # MCP Server 注册
+├── resources.ts       # Resources
+├── prompts.ts         # Prompts
+├── audit.ts
+├── explainWarnings.ts
+├── schemaOverviewLimit.ts
 ├── db/
-│   ├── connection.ts  # 连接池管理、配置读取
-│   └── executor.ts    # SQL 执行器、安全检查、超时重试
-├── tools/
-│   ├── query.ts       # 查询工具 (query, explain_query)
-│   ├── modify.ts      # 修改工具 (insert/update/delete)
-│   ├── batch.ts       # 批量工具 (batch_execute/batch_insert)
-│   ├── ddl.ts         # DDL 工具 (create_table)
-│   └── schema.ts      # 元数据工具
-└── types/
-    └── index.ts       # TypeScript 类型定义
-test/
-├── executor.test.mjs  # 单元测试（executor）
-└── audit.test.mjs     # 审计日志单测
-AGENTS.md              # AI 协作与 MCP token 约定
-Dockerfile             # 容器化部署
+│   ├── connection.ts  # 多池、只读会话、配置
+│   ├── executor.ts
+│   └── allowlist.ts
+└── tools/
+    ├── query.ts
+    ├── modify.ts
+    ├── schema.ts
+    ├── connections.ts
+    ├── ops.ts
+    ├── batch.ts
+    └── ddl.ts
+test/                    # *.test.mjs
 ```
 
 ### 常用命令
 
 ```bash
-npm run dev        # 开发模式（自动编译）
-npm run build      # 编译
-npm start          # 启动
-npm test           # 运行单元测试
-npm run lint       # 代码检查
-npm run format     # 格式化
-npm run inspector  # MCP Inspector 调试
+npm run dev        # tsc --watch
+npm run build        # 编译
+npm start            # 启动 MCP
+npm test             # 单元测试
+npm run lint
+npm run format
+npm run format:check
+npm run inspector    # MCP Inspector
 ```
 
-### Docker 部署
+### Docker
 
 ```bash
 docker build -t mysql-mcp-server .
@@ -315,15 +382,19 @@ docker run -e MYSQL_HOST=host.docker.internal \
            mysql-mcp-server
 ```
 
+---
+
 ## 故障排查
 
-**连接失败**：检查 MySQL 服务是否运行，确认 host/port/user/password 正确。远程连接注意防火墙和 MySQL 的 `bind-address` 配置。
+| 现象 | 处理 |
+| --- | --- |
+| 连接失败 | 检查 MySQL 与 `host/port/user/password`；远程注意防火墙与 `bind-address` |
+| 查询超时 | 增大 `MYSQL_QUERY_TIMEOUT`；大结果配合 `MYSQL_MAX_ROWS` |
+| 只读下写入报错 | 预期行为；检查 `MYSQL_READONLY` |
+| SSL | 设置 `MYSQL_SSL_CA` 等 |
+| MCP 未加载本地构建 | 确认已 `npm run build`，且工作区根目录含 `.env` |
 
-**查询超时**：调大 `MYSQL_QUERY_TIMEOUT`（默认 30s）。大量数据查询建议配合 `MYSQL_MAX_ROWS` 限制返回行数。
-
-**只读模式下写入报错**：这是预期行为。检查 `MYSQL_READONLY` 是否为 `true`。
-
-**SSL 连接**：设置 `MYSQL_SSL_CA` 指向 CA 证书文件路径。如需双向认证，同时设置 `MYSQL_SSL_CERT` 和 `MYSQL_SSL_KEY`。
+---
 
 ## 更新日志
 

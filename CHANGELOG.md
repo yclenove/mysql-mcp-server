@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.1] - 2026-04-09
+
+### 变更
+
+- 重组 `README.md` / `README_en.md`：目录、工具分组表、环境变量分块、架构图与源码目录对齐
+- 本仓库 `.cursor/mcp.json` 改为 `node` + `${workspaceFolder}/dist/index.js`，便于直接调试当前构建产物；文档补充方式 B（`npm link` + `mysql-mcp-server`）
+
 ## [1.4.0] - 2026-04-09
 
 ### 新增

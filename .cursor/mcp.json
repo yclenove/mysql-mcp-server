@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "mysql-mcp": {
-      "command": "mysql-mcp-server",
-      "args": [],
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"],
       "env": {}
     }
   }
