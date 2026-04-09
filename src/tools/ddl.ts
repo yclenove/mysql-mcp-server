@@ -8,30 +8,32 @@ import { validateIdentifier, escapeIdentifier } from '../db/executor.js';
 import { auditLog } from '../audit.js';
 
 export function registerDDLTools(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'create_table',
-    'CREATE TABLE；只读禁',
     {
-      table: z.string().describe('表名'),
-      columns: z
-        .array(
-          z.object({
-            name: z.string().describe('列名'),
-            type: z.string().describe('类型如 INT/VARCHAR(255)'),
-            primaryKey: z.boolean().optional().describe('主键'),
-            autoIncrement: z.boolean().optional().describe('自增'),
-            nullable: z.boolean().optional().describe('可 NULL，默认 true'),
-            defaultValue: z.string().optional().describe('DEFAULT 片段'),
-            comment: z.string().optional().describe('列注释'),
-          })
-        )
-        .min(1)
-        .describe('列定义'),
-      comment: z.string().optional().describe('表注释'),
-      engine: z.string().optional().describe('引擎，默认 InnoDB'),
-      charset: z.string().optional().describe('字符集，默认 utf8mb4'),
+      description: 'CREATE TABLE；只读禁',
+      inputSchema: {
+        table: z.string().describe('表名'),
+        columns: z
+          .array(
+            z.object({
+              name: z.string().describe('列名'),
+              type: z.string().describe('类型如 INT/VARCHAR(255)'),
+              primaryKey: z.boolean().optional().describe('主键'),
+              autoIncrement: z.boolean().optional().describe('自增'),
+              nullable: z.boolean().optional().describe('可 NULL，默认 true'),
+              defaultValue: z.string().optional().describe('DEFAULT 片段'),
+              comment: z.string().optional().describe('列注释'),
+            })
+          )
+          .min(1)
+          .describe('列定义'),
+        comment: z.string().optional().describe('表注释'),
+        engine: z.string().optional().describe('引擎，默认 InnoDB'),
+        charset: z.string().optional().describe('字符集，默认 utf8mb4'),
+      },
     },
-    async ({ table, columns, comment, engine, charset }) => {
+    async ({ table, columns, comment, engine, charset }, _extra) => {
       if (isReadOnly()) {
         return {
           content: [{ type: 'text', text: '错误：当前处于只读模式，禁止执行 DDL 操作' }],

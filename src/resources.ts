@@ -10,11 +10,11 @@ import { getPool, isReadOnly } from './db/connection.js';
  * 注册 MCP Resources
  */
 export function registerResources(server: McpServer): void {
-  server.resource(
+  server.registerResource(
     'schema-overview',
     'mysql://schema/overview',
     { description: '当前库：表与列（无列注释，需注释用 describe_table）' },
-    async () => {
+    async (_uri, _extra) => {
       const tablesResult = await listTables();
       if (!tablesResult.success || !tablesResult.data) {
         return {
@@ -60,12 +60,13 @@ export function registerResources(server: McpServer): void {
     }
   );
 
-  server.resource(
+  server.registerResource(
     'table-schema',
     new ResourceTemplate('mysql://schema/table/{tableName}', { list: undefined }),
     { description: '单表列 JSON' },
-    async (uri, { tableName }) => {
-      const table = Array.isArray(tableName) ? tableName[0] : tableName;
+    async (uri, variables, _extra) => {
+      const raw = variables.tableName;
+      const table = Array.isArray(raw) ? raw[0] : raw;
       if (!table) {
         return {
           contents: [
@@ -103,11 +104,11 @@ export function registerResources(server: McpServer): void {
     }
   );
 
-  server.resource(
+  server.registerResource(
     'pool-status',
     'mysql://status/pool',
     { description: '连接池队列/连接数' },
-    async () => {
+    async (_uri, _extra) => {
       try {
         const pool = getPool();
         const p = pool.pool as any;
@@ -142,29 +143,34 @@ export function registerResources(server: McpServer): void {
     }
   );
 
-  server.resource('databases', 'mysql://databases', { description: '库名 JSON 数组' }, async () => {
-    const result = await listDatabases();
-    if (!result.success) {
+  server.registerResource(
+    'databases',
+    'mysql://databases',
+    { description: '库名 JSON 数组' },
+    async (_uri, _extra) => {
+      const result = await listDatabases();
+      if (!result.success) {
+        return {
+          contents: [
+            {
+              uri: 'mysql://databases',
+              mimeType: 'text/plain',
+              text: `错误：${result.error}`,
+            },
+          ],
+        };
+      }
+
+      const dbNames = result.data?.map((r: any) => r.Database) || [];
       return {
         contents: [
           {
             uri: 'mysql://databases',
-            mimeType: 'text/plain',
-            text: `错误：${result.error}`,
+            mimeType: 'application/json',
+            text: JSON.stringify(dbNames),
           },
         ],
       };
     }
-
-    const dbNames = result.data?.map((r: any) => r.Database) || [];
-    return {
-      contents: [
-        {
-          uri: 'mysql://databases',
-          mimeType: 'application/json',
-          text: JSON.stringify(dbNames),
-        },
-      ],
-    };
-  });
+  );
 }

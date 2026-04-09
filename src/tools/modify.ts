@@ -44,14 +44,16 @@ function formatWriteResult(result: {
  * 注册数据修改类工具
  */
 export function registerModifyTools(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'insert',
-    'INSERT；? 参数',
     {
-      sql: z.string().describe('INSERT SQL'),
-      params: z.array(z.any()).optional().describe('? 绑定值'),
+      description: 'INSERT；? 参数',
+      inputSchema: {
+        sql: z.string().describe('INSERT SQL'),
+        params: z.array(z.any()).optional().describe('? 绑定值'),
+      },
     },
-    async ({ sql, params = [] }) => {
+    async ({ sql, params = [] }, _extra) => {
       const readOnlyCheck = checkReadOnly();
       if (!readOnlyCheck.allowed) {
         return {
@@ -83,14 +85,16 @@ export function registerModifyTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'update',
-    'UPDATE，须含 WHERE；? 参数',
     {
-      sql: z.string().describe('UPDATE SQL'),
-      params: z.array(z.any()).optional().describe('? 绑定值'),
+      description: 'UPDATE，须含 WHERE；? 参数',
+      inputSchema: {
+        sql: z.string().describe('UPDATE SQL'),
+        params: z.array(z.any()).optional().describe('? 绑定值'),
+      },
     },
-    async ({ sql, params = [] }) => {
+    async ({ sql, params = [] }, _extra) => {
       const readOnlyCheck = checkReadOnly();
       if (!readOnlyCheck.allowed) {
         return {
@@ -122,14 +126,16 @@ export function registerModifyTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'delete',
-    'DELETE，须含 WHERE；? 参数',
     {
-      sql: z.string().describe('DELETE SQL'),
-      params: z.array(z.any()).optional().describe('? 绑定值'),
+      description: 'DELETE，须含 WHERE；? 参数',
+      inputSchema: {
+        sql: z.string().describe('DELETE SQL'),
+        params: z.array(z.any()).optional().describe('? 绑定值'),
+      },
     },
-    async ({ sql, params = [] }) => {
+    async ({ sql, params = [] }, _extra) => {
       const readOnlyCheck = checkReadOnly();
       if (!readOnlyCheck.allowed) {
         return {
@@ -161,14 +167,16 @@ export function registerModifyTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'call_procedure',
-    'CALL 存储过程；? 参数',
     {
-      procedure: z.string().describe('过程名'),
-      params: z.array(z.any()).optional().describe('实参'),
+      description: 'CALL 存储过程；? 参数',
+      inputSchema: {
+        procedure: z.string().describe('过程名'),
+        params: z.array(z.any()).optional().describe('实参'),
+      },
     },
-    async ({ procedure, params = [] }) => {
+    async ({ procedure, params = [] }, _extra) => {
       const readOnlyCheck = checkReadOnly();
       if (!readOnlyCheck.allowed) {
         return {

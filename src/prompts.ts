@@ -5,11 +5,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 export function registerPrompts(server: McpServer): void {
-  server.prompt(
+  server.registerPrompt(
     'analyze-table',
-    '表结构/索引/行数分析与优化建议',
-    { table: z.string().describe('表名') },
-    async ({ table }) => ({
+    {
+      description: '表结构/索引/行数分析与优化建议',
+      argsSchema: { table: z.string().describe('表名') },
+    },
+    async ({ table }, _extra) => ({
       messages: [
         {
           role: 'user' as const,
@@ -25,14 +27,16 @@ export function registerPrompts(server: McpServer): void {
     })
   );
 
-  server.prompt(
+  server.registerPrompt(
     'generate-query',
-    '自然语言 → 参数化 SELECT + query 执行',
     {
-      description: z.string().describe('需求描述'),
-      tables: z.string().optional().describe('表名逗号分隔；缺省则 list_tables+describe_table'),
+      description: '自然语言 → 参数化 SELECT + query 执行',
+      argsSchema: {
+        description: z.string().describe('需求描述'),
+        tables: z.string().optional().describe('表名逗号分隔；缺省则 list_tables+describe_table'),
+      },
     },
-    async ({ description, tables }) => {
+    async ({ description, tables }, _extra) => {
       const tableHint = tables
         ? `表：${tables}`
         : '先 list_tables / describe_table 再写 SQL';
@@ -55,11 +59,13 @@ export function registerPrompts(server: McpServer): void {
     }
   );
 
-  server.prompt(
+  server.registerPrompt(
     'optimize-query',
-    'EXPLAIN + 索引检查 + 改写建议',
-    { sql: z.string().describe('SELECT SQL') },
-    async ({ sql }) => ({
+    {
+      description: 'EXPLAIN + 索引检查 + 改写建议',
+      argsSchema: { sql: z.string().describe('SELECT SQL') },
+    },
+    async ({ sql }, _extra) => ({
       messages: [
         {
           role: 'user' as const,
@@ -78,18 +84,22 @@ export function registerPrompts(server: McpServer): void {
     })
   );
 
-  server.prompt('data-overview', '库级：表清单、行数、抽样行', {}, async () => ({
-    messages: [
-      {
-        role: 'user' as const,
-        content: {
-          type: 'text' as const,
-          text: [
-            'list_tables 看行数；每表 query 取最近 3 行（有主键则倒序主键）。',
-            '汇总：表数、用途推断、可能外键关联。',
-          ].join('\n'),
+  server.registerPrompt(
+    'data-overview',
+    { description: '库级：表清单、行数、抽样行' },
+    async (_extra) => ({
+      messages: [
+        {
+          role: 'user' as const,
+          content: {
+            type: 'text' as const,
+            text: [
+              'list_tables 看行数；每表 query 取最近 3 行（有主键则倒序主键）。',
+              '汇总：表数、用途推断、可能外键关联。',
+            ].join('\n'),
+          },
         },
-      },
-    ],
-  }));
+      ],
+    })
+  );
 }

@@ -18,11 +18,10 @@ import { auditLog } from '../audit.js';
  * 注册元数据相关工具
  */
 export function registerSchemaTools(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'test_connection',
-    'Ping；返回 version/latency',
-    {},
-    async () => {
+    { description: 'Ping；返回 version/latency' },
+    async (_extra) => {
       const startTime = Date.now();
       const result = await testConnectionWithDetails();
       const executionTime = Date.now() - startTime;
@@ -74,13 +73,15 @@ export function registerSchemaTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'use_database',
-    'USE 切换库',
     {
-      database: z.string().describe('库名'),
+      description: 'USE 切换库',
+      inputSchema: {
+        database: z.string().describe('库名'),
+      },
     },
-    async ({ database }) => {
+    async ({ database }, _extra) => {
       const err = validateIdentifier(database, '数据库名');
       if (err) {
         return {
@@ -111,7 +112,7 @@ export function registerSchemaTools(server: McpServer): void {
     }
   );
 
-  server.tool('show_databases', 'SHOW DATABASES', {}, async () => {
+  server.registerTool('show_databases', { description: 'SHOW DATABASES' }, async (_extra) => {
     const result = await listDatabases();
 
     if (!result.success) {
@@ -131,13 +132,15 @@ export function registerSchemaTools(server: McpServer): void {
     };
   });
 
-  server.tool(
+  server.registerTool(
     'list_tables',
-    '表列表+行数等元数据',
     {
-      database: z.string().optional().describe('库名，缺省用 MYSQL_DATABASE'),
+      description: '表列表+行数等元数据',
+      inputSchema: {
+        database: z.string().optional().describe('库名，缺省用 MYSQL_DATABASE'),
+      },
     },
-    async ({ database }) => {
+    async ({ database }, _extra) => {
       const result = await listTables(database);
 
       if (!result.success) {
@@ -153,13 +156,15 @@ export function registerSchemaTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'describe_table',
-    '列结构（类型/主键/可空）',
     {
-      table: z.string().describe('表名'),
+      description: '列结构（类型/主键/可空）',
+      inputSchema: {
+        table: z.string().describe('表名'),
+      },
     },
-    async ({ table }) => {
+    async ({ table }, _extra) => {
       const result = await describeTable(table);
 
       if (!result.success) {
@@ -175,13 +180,15 @@ export function registerSchemaTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'show_indexes',
-    'SHOW INDEX',
     {
-      table: z.string().describe('表名'),
+      description: 'SHOW INDEX',
+      inputSchema: {
+        table: z.string().describe('表名'),
+      },
     },
-    async ({ table }) => {
+    async ({ table }, _extra) => {
       const result = await showIndexes(table);
 
       if (!result.success) {
@@ -197,13 +204,15 @@ export function registerSchemaTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'show_create_table',
-    'SHOW CREATE TABLE',
     {
-      table: z.string().describe('表名'),
+      description: 'SHOW CREATE TABLE',
+      inputSchema: {
+        table: z.string().describe('表名'),
+      },
     },
-    async ({ table }) => {
+    async ({ table }, _extra) => {
       const result = await showCreateTable(table);
 
       if (!result.success) {

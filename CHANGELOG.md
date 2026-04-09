@@ -4,6 +4,12 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.1] - 2026-04-09
+
+### 变更
+
+- 适配 `@modelcontextprotocol/sdk`：将已弃用的 `server.tool` / `server.resource` / `server.prompt` 全部改为 `registerTool` / `registerResource` / `registerPrompt`，消除 IDE 中划线（deprecated）提示；回调按 SDK 要求接收 `extra` 参数
+
 ## [1.2.0] - 2026-04-09
 
 ### 变更

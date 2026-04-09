@@ -18,21 +18,23 @@ const MAX_BATCH_SIZE = 50;
  * 注册批量执行工具
  */
 export function registerBatchTools(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'batch_execute',
-    `事务批量 SQL，失败回滚，≤${MAX_BATCH_SIZE} 条`,
     {
-      statements: z
-        .array(
-          z.object({
-            sql: z.string().describe('SQL'),
-            params: z.array(z.any()).optional().describe('? 绑定值'),
-          })
-        )
-        .max(MAX_BATCH_SIZE)
-        .describe('语句数组'),
+      description: `事务批量 SQL，失败回滚，≤${MAX_BATCH_SIZE} 条`,
+      inputSchema: {
+        statements: z
+          .array(
+            z.object({
+              sql: z.string().describe('SQL'),
+              params: z.array(z.any()).optional().describe('? 绑定值'),
+            })
+          )
+          .max(MAX_BATCH_SIZE)
+          .describe('语句数组'),
+      },
     },
-    async ({ statements }) => {
+    async ({ statements }, _extra) => {
       if (!statements || statements.length === 0) {
         return {
           content: [{ type: 'text', text: '错误：语句列表不能为空' }],
@@ -119,17 +121,19 @@ export function registerBatchTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'batch_insert',
-    `多行 INSERT，事务，≤${MAX_BATCH_SIZE} 行`,
     {
-      table: z.string().describe('表名'),
-      records: z
-        .array(z.record(z.string(), z.any()))
-        .max(MAX_BATCH_SIZE)
-        .describe('对象数组，键为列名'),
+      description: `多行 INSERT，事务，≤${MAX_BATCH_SIZE} 行`,
+      inputSchema: {
+        table: z.string().describe('表名'),
+        records: z
+          .array(z.record(z.string(), z.any()))
+          .max(MAX_BATCH_SIZE)
+          .describe('对象数组，键为列名'),
+      },
     },
-    async ({ table, records }) => {
+    async ({ table, records }, _extra) => {
       if (isReadOnly()) {
         return {
           content: [{ type: 'text', text: '错误：当前处于只读模式，禁止执行插入操作' }],

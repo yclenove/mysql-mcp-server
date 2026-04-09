@@ -24,33 +24,37 @@ function formatExplainResult(rows: any[]): string {
     .join('\n');
 }
 
+const queryInputSchema = {
+  sql: z.string().describe('SQL'),
+  params: z.array(z.any()).optional().describe('? 绑定值'),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .optional()
+    .describe('最大行数，覆盖 MYSQL_MAX_ROWS'),
+  page: z.number().int().min(1).optional().describe('页码，从 1'),
+  pageSize: z
+    .number()
+    .int()
+    .min(1)
+    .max(1000)
+    .optional()
+    .describe('每页行数，默认 20'),
+};
+
 /**
  * 注册查询类工具
  */
 export function registerQueryTools(server: McpServer): void {
-  server.tool(
+  server.registerTool(
     'query',
-    '只读 SELECT/SHOW/DESC/EXPLAIN；? 参数；可选 limit 或 page+pageSize',
     {
-      sql: z.string().describe('SQL'),
-      params: z.array(z.any()).optional().describe('? 绑定值'),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(10000)
-        .optional()
-        .describe('最大行数，覆盖 MYSQL_MAX_ROWS'),
-      page: z.number().int().min(1).optional().describe('页码，从 1'),
-      pageSize: z
-        .number()
-        .int()
-        .min(1)
-        .max(1000)
-        .optional()
-        .describe('每页行数，默认 20'),
+      description: '只读 SELECT/SHOW/DESC/EXPLAIN；? 参数；可选 limit 或 page+pageSize',
+      inputSchema: queryInputSchema,
     },
-    async ({ sql, params = [], limit, page, pageSize }) => {
+    async ({ sql, params = [], limit, page, pageSize }, _extra) => {
       if (!isReadOnlyQuery(sql)) {
         return {
           content: [{ type: 'text', text: '错误：此工具只允许执行 SELECT/SHOW/DESCRIBE 查询' }],
@@ -93,13 +97,15 @@ export function registerQueryTools(server: McpServer): void {
     }
   );
 
-  server.tool(
+  server.registerTool(
     'explain_query',
-    'EXPLAIN 单条 SELECT',
     {
-      sql: z.string().describe('SELECT 语句'),
+      description: 'EXPLAIN 单条 SELECT',
+      inputSchema: {
+        sql: z.string().describe('SELECT 语句'),
+      },
     },
-    async ({ sql }) => {
+    async ({ sql }, _extra) => {
       const trimmed = sql.trim().toLowerCase();
       if (!trimmed.startsWith('select')) {
         return {
