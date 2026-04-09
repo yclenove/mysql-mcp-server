@@ -212,7 +212,8 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 
 #### Cursor
 
-在 Cursor 设置中添加 MCP 服务器，命令为 `npx -y @yclenove/mysql-mcp-server`，配置对应的环境变量。
+1. **推荐（本仓库已提供）**：将 [`mcp.json`](./.cursor/mcp.json) 置于项目根目录 `.cursor/mcp.json`（或复制到你的用户目录 `~/.cursor/mcp.json`）。其中使用全局安装的 `mysql-mcp-server`；**密码**通过系统环境变量 `MYSQL_PASSWORD` 注入（可选 `MYSQL_DATABASE`），勿把明文密码提交到 Git。
+2. **等价方式**：在 Cursor **Settings → Tools & MCP** 中添加服务器，命令为 `npx -y @yclenove/mysql-mcp-server`，并配置相同的环境变量。
 
 #### 生产环境（只读模式）
 

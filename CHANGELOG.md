@@ -6,6 +6,14 @@
 
 ## [1.2.4] - 2026-04-09
 
+### 新增
+
+- 项目内 [`.cursor/mcp.json`](./.cursor/mcp.json) 示例：使用全局 `mysql-mcp-server`，`MYSQL_PASSWORD` / `MYSQL_DATABASE` 通过环境变量注入；`.gitignore` 改为仅跟踪该文件、其余 `.cursor/*` 仍忽略
+
+### 文档
+
+- README / README_en：补充 Cursor 下通过 `.cursor/mcp.json` 配置的步骤
+
 ### 修复
 
 - `npm run test`：在 Node.js 24（如 GitHub Actions）下传入目录 `test/` 会被误当作单文件入口导致 `Cannot find module '.../test'`；改为显式列出 `test/*.test.mjs`，与 Windows / Linux CI 行为一致

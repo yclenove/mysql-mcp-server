@@ -212,7 +212,8 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 #### Cursor
 
-Add MCP server in Cursor settings with command `npx -y @yclenove/mysql-mcp-server` and configure environment variables accordingly.
+1. **Recommended (this repo includes a template)**: Use [`.cursor/mcp.json`](./.cursor/mcp.json) at the project root (or copy it to `~/.cursor/mcp.json`). It expects a globally installed `mysql-mcp-server`; set **`MYSQL_PASSWORD`** (and optionally **`MYSQL_DATABASE`**) via environment variables—do not commit secrets.
+2. **Alternative**: In **Settings → Tools & MCP**, add a server with command `npx -y @yclenove/mysql-mcp-server` and the same environment variables.
 
 #### Production (Read-Only Mode)
 
