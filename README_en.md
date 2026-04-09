@@ -25,6 +25,8 @@ A MySQL database tool server based on MCP (Model Context Protocol), enabling AI 
 - **Query timeout & retry** — configurable timeout and auto-retry strategy
 - **SSL support** — secure connections to remote databases
 
+For an implementation and feature comparison with other open-source MySQL MCP servers (Python single-tool, single-SQL-tool, HTTP multi-connection, Google MCP Toolbox, etc.), see [COMPARISON_MCP_PROJECTS.md](./COMPARISON_MCP_PROJECTS.md).
+
 ## Architecture
 
 ```

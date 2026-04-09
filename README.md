@@ -25,6 +25,8 @@
 - **查询超时与重试** — 可配置超时时间和自动重试策略
 - **SSL 支持** — 安全连接到远程数据库
 
+与常见开源 MySQL MCP（Python 单工具、单 SQL 工具、HTTP 多连接、Google Toolbox 等）的实现与功能对比，见 [COMPARISON_MCP_PROJECTS.md](./COMPARISON_MCP_PROJECTS.md)。
+
 ## 架构
 
 ```
