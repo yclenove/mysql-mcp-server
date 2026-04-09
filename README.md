@@ -120,7 +120,7 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 
 | 资源 URI                           | 说明                                                  |
 | ---------------------------------- | ----------------------------------------------------- |
-| `mysql://schema/overview`          | 当前库表与列（无列注释，需注释请用 `describe_table`） |
+| `mysql://schema/overview`          | 当前库表与列摘要（无列注释）；表多默认仅前 50 张展开列，可调 `MCP_SCHEMA_OVERVIEW_MAX_TABLES`；详单用 `mysql://schema/table/{表名}` 或 `describe_table` |
 | `mysql://schema/table/{tableName}` | 单表列结构（JSON）                                    |
 | `mysql://databases`                | 库名 JSON 数组                                        |
 | `mysql://status/pool`              | 连接池队列与连接数                                    |
@@ -189,6 +189,7 @@ npm 上的包名由 `package.json` 的 `name` 决定（当前为 `@yclenove/mysq
 | `MYSQL_SSL_KEY`          | -         | SSL 客户端密钥路径                                   |
 | `MYSQL_MAX_SQL_LENGTH`   | 102400    | SQL 语句最大长度（字符），超出拒绝执行               |
 | `MCP_DEBUG`              | false     | 开启调试信息（返回 executionTime）                   |
+| `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | 50  | Resource `mysql://schema/overview` 最多展开列信息的表数；`0` 表示仅表名；增大可接近「全量展开」（大库慎用） |
 | `MCP_AUDIT_LOG`          | -         | 审计日志文件路径（如 `./audit.log`），不设置则不记录 |
 
 ### MCP 客户端配置

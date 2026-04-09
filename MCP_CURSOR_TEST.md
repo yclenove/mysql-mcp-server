@@ -21,7 +21,7 @@
 | 批量 | 用 `batch_execute` 执行两条只读 SQL；若有测试表再用 `batch_insert` 插入两行。 | `batch_execute`、`batch_insert` |
 | DDL | 非只读且非生产时，用 `create_table` 建一张列尽量少的临时表。 | `create_table` |
 | 存储过程 | 若库中存在存储过程，用 `call_procedure` 调用；否则说明跳过。 | `call_procedure`（可选） |
-| Resources | 读取 MCP 资源：`mysql://databases`、`mysql://status/pool`、`mysql://schema/overview`、`mysql://schema/table/{表名}`。 | 四类 Resource |
+| Resources | 读取 MCP 资源：`mysql://databases`、`mysql://status/pool`、`mysql://schema/overview`（大库默认仅前 50 张表含列，可调 `MCP_SCHEMA_OVERVIEW_MAX_TABLES`）、`mysql://schema/table/{表名}`。 | 四类 Resource |
 | Prompts | 使用 MCP Prompts：`analyze-table`（指定表名）、`generate-query`、`optimize-query`（给一条 SELECT）、`data-overview`。 | 四个 Prompt |
 
 ## 一条「总控」提示（可整段粘贴）

@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.7] - 2026-04-09
+
+### 优化
+
+- Resource `mysql://schema/overview`：通过环境变量 `MCP_SCHEMA_OVERVIEW_MAX_TABLES` 限制带列信息的表数量（默认 50），超出部分仅列表名摘要，减少大库的 token 与 `information_schema` 查询；设为 `0` 时仅输出表名列表
+- 新增 `src/schemaOverviewLimit.ts` 与 `test/schema-overview-limit.test.mjs`
+
 ## [1.2.6] - 2026-04-09
 
 ### 新增

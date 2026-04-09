@@ -120,7 +120,7 @@ Paste the token into **GitHub → Repository → Settings → Secrets → `NPM_T
 
 | Resource URI                       | Description                                                                |
 | ---------------------------------- | -------------------------------------------------------------------------- |
-| `mysql://schema/overview`          | Tables and columns (no column comments; use `describe_table` for comments) |
+| `mysql://schema/overview`          | Table/column summary (no column comments); by default only the first 50 tables include columns (`MCP_SCHEMA_OVERVIEW_MAX_TABLES`); use `mysql://schema/table/{name}` or `describe_table` for full detail |
 | `mysql://schema/table/{tableName}` | Single-table column structure (JSON)                                       |
 | `mysql://databases`                | Database names as a JSON array                                             |
 | `mysql://status/pool`              | Pool queue and connection counts                                           |
@@ -189,6 +189,7 @@ Create a `.env` file in the **project root** (copy from [`.env.example`](./.env.
 | `MYSQL_SSL_KEY`          | -         | SSL client key path                                           |
 | `MYSQL_MAX_SQL_LENGTH`   | 102400    | Max SQL length (chars), rejects if exceeded                   |
 | `MCP_DEBUG`              | false     | Enable debug info (returns executionTime)                     |
+| `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | 50  | Max tables with column lines in Resource `mysql://schema/overview`; `0` = names only; increase for near-full expansion (large schemas: caution) |
 | `MCP_AUDIT_LOG`          | -         | Audit log file path (e.g. `./audit.log`), disabled if not set |
 
 ### MCP Client Configuration
