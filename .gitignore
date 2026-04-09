@@ -60,4 +60,7 @@ test-integration.mjs
 # Cursor rules（本地开发用）
 .cursor/
 
+# 本地操作说明（不提交）
+NPM发布指南-勿提交.md
+
 # package-lock.json  # 保留以支持 npm ci
