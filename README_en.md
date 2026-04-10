@@ -271,7 +271,7 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 ### Cursor
 
-[![Add to Cursor](https://img.shields.io/badge/Add%20to-Cursor-6C47FF?logo=cursor&logoColor=white)](https://cursor.com/en/install-mcp?name=mysql-mcp-server&config=eyJjb21tYW5kIjoibnB4IC15IEB5Y2xlbm92ZS9teXNxbC1tY3Atc2VydmVyQGxhdGVzdCJ9)
+[![Add to Cursor](https://img.shields.io/badge/Add%20to-Cursor-6C47FF?logo=cursor&logoColor=white)](https://cursor.com/en/install-mcp?name=mysql-mcp-server&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIkB5Y2xlbm92ZS9teXNxbC1tY3Atc2VydmVyQGxhdGVzdCJdfQ%3D%3D)
 
 1. **Open this repo as the workspace root** (so `cwd` loads the project root `.env`).
 2. **Global npm install**: `npm install -g @yclenove/mysql-mcp-server@latest` and ensure `mysql-mcp-server` is on `PATH` (Windows: npm global bin).
