@@ -276,6 +276,8 @@ npm start
 
 ### Cursor
 
+[![Add to Cursor](https://img.shields.io/badge/Add%20to-Cursor-6C47FF?logo=cursor&logoColor=white)](https://cursor.com/en/install-mcp?name=mysql-mcp-server&config=eyJjb21tYW5kIjoibnB4IC15IEB5Y2xlbm92ZS9teXNxbC1tY3Atc2VydmVyQGxhdGVzdCJ9)
+
 1. **打开本仓库为工作区根目录**（使进程 `cwd` 能加载项目根下的 `.env`；多文件夹工作区时请单独打开本仓库或将其设为根）。
 2. **安装 npm 包（全局）**：`npm install -g @yclenove/mysql-mcp-server@latest`，确保终端里能执行 `mysql-mcp-server`（Windows 需保证 Node 的 npm 全局 `bin` 在 PATH 中）。
 3. **连接信息**：写在**项目根目录** `.env`（已在 `.gitignore`，勿提交密码）。**不要**在 `.cursor/mcp.json` 的 `env` 里写密码；保持 `env: {}` 即可。
