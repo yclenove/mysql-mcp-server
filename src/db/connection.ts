@@ -1,6 +1,7 @@
 /**
  * 数据库连接池管理（支持默认连接 + MYSQL_MCP_EXTRA_CONNECTIONS 多 DSN）
  */
+import type { Connection as Mysql2CallbackConnection } from 'mysql2';
 import mysql, { Pool, PoolOptions } from 'mysql2/promise';
 import { DatabaseConfig } from '../types/index.js';
 
@@ -201,7 +202,12 @@ function createMysqlPool(config: DatabaseConfig): Pool {
   /** 会话级只读，与工具层 MYSQL_READONLY 双保险（MySQL 5.6+ / MariaDB 10.0+ 支持 transaction_read_only） */
   if (process.env.MYSQL_READONLY === 'true') {
     pool.on('connection', (connection) => {
-      void connection.query('SET SESSION transaction_read_only = 1').catch(() => undefined);
+      // createPool 虽来自 mysql2/promise，但 'connection' 事件里仍是 callback 版 Connection。
+      // 对其 query 结果调用 .catch() / await 会触发 mysql2 的 “query is not a promise” 报错。
+      (connection as unknown as Mysql2CallbackConnection).query(
+        'SET SESSION transaction_read_only = 1',
+        () => undefined
+      );
     });
   }
 
