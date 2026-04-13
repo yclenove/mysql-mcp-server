@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "mysql-mcp": {
-      "command": "mysql-mcp-server",
-      "args": [],
-      "env": {}
-    }
-  }
-}
