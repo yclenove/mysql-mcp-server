@@ -4,6 +4,13 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.6] - 2026-04-14
+
+### 变更
+
+- `README.md` / `README_en.md`：Cursor 接入改为「本地自建 `.cursor/mcp.json`、仓库不提交 `.cursor/`」；本地开发与安全排查表述同步
+- `MCP_CURSOR_TEST.md`、`AGENTS.md`：与上述约定一致，移除对已提交 `.cursor/mcp.json` 的依赖描述
+
 ## [1.4.5] - 2026-04-09
 
 ### 变更

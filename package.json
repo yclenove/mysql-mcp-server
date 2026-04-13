@@ -1,6 +1,6 @@
 {
   "name": "@yclenove/mysql-mcp-server",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,8 +21,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\" \"test/**/*.mjs\"",
-    "format:check": "prettier --check \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\" \"test/**/*.mjs\"",
+    "format": "prettier --write \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\" \"test/**/*.mjs\" README.md README_en.md MCP_CURSOR_TEST.md CHANGELOG.md AGENTS.md",
+    "format:check": "prettier --check \"{src,.github}/**/*.{ts,js,json,yml,yaml,md}\" \"test/**/*.mjs\" README.md README_en.md MCP_CURSOR_TEST.md CHANGELOG.md AGENTS.md",
     "test": "node --test --test-name-pattern=. test/audit.test.mjs test/allowlist-extra.test.mjs test/connection-url.test.mjs test/connections-config.test.mjs test/database-allowlist.test.mjs test/explain-json-warnings.test.mjs test/explain-warnings.test.mjs test/executor.test.mjs test/schema-overview-limit.test.mjs test/startup-exit.test.mjs",
     "prepublishOnly": "npm run build"
   },

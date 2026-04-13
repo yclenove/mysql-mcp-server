@@ -106,44 +106,44 @@ The published name comes from `package.json` → `name` (currently `@yclenove/my
 
 ### Query and analysis
 
-| Tool | Description | Parameters |
-| --- | --- | --- |
-| `query` | Read-only SELECT/SHOW/DESCRIBE/EXPLAIN; `?` placeholders; `limit` or `page`+`pageSize` | `sql`, `params?`, `limit?`, `page?`, `pageSize?` |
-| `explain_query` | Execution plan; row EXPLAIN + warnings; `MYSQL_MCP_EXPLAIN_JSON=true` uses FORMAT=JSON | `sql` |
+| Tool            | Description                                                                            | Parameters                                       |
+| --------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `query`         | Read-only SELECT/SHOW/DESCRIBE/EXPLAIN; `?` placeholders; `limit` or `page`+`pageSize` | `sql`, `params?`, `limit?`, `page?`, `pageSize?` |
+| `explain_query` | Execution plan; row EXPLAIN + warnings; `MYSQL_MCP_EXPLAIN_JSON=true` uses FORMAT=JSON | `sql`                                            |
 
 ### Metadata and connections
 
-| Tool | Description | Parameters |
-| --- | --- | --- |
-| `test_connection` | Ping, version, current `connectionId` / database | — |
-| `use_database` | `USE` database (allowlist applies) | `database` |
-| `show_databases` | List databases (filtered by allowlist) | — |
-| `list_tables` | Tables with metadata | `database?` |
-| `describe_table` | Column structure | `table` |
-| `show_indexes` | Indexes | `table` |
-| `show_create_table` | DDL | `table` |
-| `list_connections` | Configured connection ids (no passwords) | — |
-| `use_connection` | Switch active connection | `connection_id` |
+| Tool                | Description                                      | Parameters      |
+| ------------------- | ------------------------------------------------ | --------------- |
+| `test_connection`   | Ping, version, current `connectionId` / database | —               |
+| `use_database`      | `USE` database (allowlist applies)               | `database`      |
+| `show_databases`    | List databases (filtered by allowlist)           | —               |
+| `list_tables`       | Tables with metadata                             | `database?`     |
+| `describe_table`    | Column structure                                 | `table`         |
+| `show_indexes`      | Indexes                                          | `table`         |
+| `show_create_table` | DDL                                              | `table`         |
+| `list_connections`  | Configured connection ids (no passwords)         | —               |
+| `use_connection`    | Switch active connection                         | `connection_id` |
 
 ### Writes and batch
 
-| Tool | Description | Parameters |
-| --- | --- | --- |
-| `insert` / `update` / `delete` | Parameterized; UPDATE/DELETE require WHERE | `sql`, `params?` |
-| `call_procedure` | Stored procedure | `procedure`, `params?` |
-| `batch_execute` | Transactional batch, max 50 statements | `statements[]` |
-| `batch_insert` | Batch insert, max 50 rows | `table`, `records[]` |
-| `create_table` | DDL (disabled when read-only) | `table`, `columns[]`, … |
+| Tool                           | Description                                | Parameters              |
+| ------------------------------ | ------------------------------------------ | ----------------------- |
+| `insert` / `update` / `delete` | Parameterized; UPDATE/DELETE require WHERE | `sql`, `params?`        |
+| `call_procedure`               | Stored procedure                           | `procedure`, `params?`  |
+| `batch_execute`                | Transactional batch, max 50 statements     | `statements[]`          |
+| `batch_insert`                 | Batch insert, max 50 rows                  | `table`, `records[]`    |
+| `create_table`                 | DDL (disabled when read-only)              | `table`, `columns[]`, … |
 
 ### Optional ops (env required)
 
-| Tool | Prerequisites |
-| --- | --- |
-| `process_list` | `MYSQL_MCP_OPS_TOOLS=true`; row cap `MYSQL_MCP_PROCESS_LIST_MAX` |
-| `slow_query_status` | `MYSQL_MCP_OPS_TOOLS=true` |
-| `kill_query` | `MYSQL_MCP_KILL_QUERY=true`; not allowed when `MYSQL_READONLY` |
-| `read_audit_log` | `MYSQL_MCP_READ_AUDIT_TOOL=true` and `MCP_AUDIT_LOG` |
-| `read_slow_query_log` | `MYSQL_MCP_READ_SLOW_LOG=true` and `MYSQL_MCP_SLOW_LOG_PATH` |
+| Tool                  | Prerequisites                                                    |
+| --------------------- | ---------------------------------------------------------------- |
+| `process_list`        | `MYSQL_MCP_OPS_TOOLS=true`; row cap `MYSQL_MCP_PROCESS_LIST_MAX` |
+| `slow_query_status`   | `MYSQL_MCP_OPS_TOOLS=true`                                       |
+| `kill_query`          | `MYSQL_MCP_KILL_QUERY=true`; not allowed when `MYSQL_READONLY`   |
+| `read_audit_log`      | `MYSQL_MCP_READ_AUDIT_TOOL=true` and `MCP_AUDIT_LOG`             |
+| `read_slow_query_log` | `MYSQL_MCP_READ_SLOW_LOG=true` and `MYSQL_MCP_SLOW_LOG_PATH`     |
 
 ---
 
@@ -151,21 +151,21 @@ The published name comes from `package.json` → `name` (currently `@yclenove/my
 
 ### MCP Resources
 
-| URI | Description |
-| --- | --- |
-| `mysql://schema/overview` | Table/column summary; large schemas: limit with `MCP_SCHEMA_OVERVIEW_MAX_TABLES` |
-| `mysql://schema/table/{tableName}` | Single-table columns (JSON) |
-| `mysql://databases` | Database names (JSON array, allowlist filtered) |
-| `mysql://status/pool` | Pool status |
+| URI                                | Description                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| `mysql://schema/overview`          | Table/column summary; large schemas: limit with `MCP_SCHEMA_OVERVIEW_MAX_TABLES` |
+| `mysql://schema/table/{tableName}` | Single-table columns (JSON)                                                      |
+| `mysql://databases`                | Database names (JSON array, allowlist filtered)                                  |
+| `mysql://status/pool`              | Pool status                                                                      |
 
 ### MCP Prompts
 
-| Prompt | Description |
-| --- | --- |
-| `analyze-table` | Structure, indexes, row counts |
+| Prompt           | Description                                       |
+| ---------------- | ------------------------------------------------- |
+| `analyze-table`  | Structure, indexes, row counts                    |
 | `generate-query` | Natural language → parameterized SELECT + `query` |
-| `optimize-query` | EXPLAIN + index and rewrite hints |
-| `data-overview` | Database-level overview |
+| `optimize-query` | EXPLAIN + index and rewrite hints                 |
+| `data-overview`  | Database-level overview                           |
 
 Manual checklist: [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md).
 
@@ -185,63 +185,63 @@ Create `.env` in the **project root** (copy [`.env.example`](./.env.example)); *
 
 ### Connection
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `MYSQL_HOST` | localhost | Host |
-| `MYSQL_PORT` | 3306 | Port |
-| `MYSQL_USER` | root | User |
-| `MYSQL_PASSWORD` | — | Password |
-| `MYSQL_DATABASE` | — | Default database |
-| `MYSQL_URL` / `MYSQL_CONNECTION_STRING` | — | `mysql://` or `mysql2://`; URL-encode passwords |
+| Variable                                | Default   | Description                                     |
+| --------------------------------------- | --------- | ----------------------------------------------- |
+| `MYSQL_HOST`                            | localhost | Host                                            |
+| `MYSQL_PORT`                            | 3306      | Port                                            |
+| `MYSQL_USER`                            | root      | User                                            |
+| `MYSQL_PASSWORD`                        | —         | Password                                        |
+| `MYSQL_DATABASE`                        | —         | Default database                                |
+| `MYSQL_URL` / `MYSQL_CONNECTION_STRING` | —         | `mysql://` or `mysql2://`; URL-encode passwords |
 
 ### Safety and allowlist
 
-| Variable | Description |
-| --- | --- |
-| `MYSQL_DATABASE_ALLOWLIST` | Comma-separated DB names |
+| Variable                               | Description                                             |
+| -------------------------------------- | ------------------------------------------------------- |
+| `MYSQL_DATABASE_ALLOWLIST`             | Comma-separated DB names                                |
 | `MYSQL_MCP_VALIDATE_EXTRA_CONNECTIONS` | `true` + allowlist → validate each extra DSN default DB |
-| `MYSQL_MAX_SQL_LENGTH` | Max SQL chars (default 102400) |
+| `MYSQL_MAX_SQL_LENGTH`                 | Max SQL chars (default 102400)                          |
 
 ### Execution and pool
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `MYSQL_MAX_ROWS` | 100 | Max rows |
-| `MYSQL_QUERY_TIMEOUT` | 30000 | Query timeout (ms) |
-| `MYSQL_RETRY_COUNT` | 2 | Read retry count |
-| `MYSQL_RETRY_DELAY_MS` | 200 | Retry backoff |
-| `MYSQL_CONNECTION_LIMIT` | 10 | Pool size |
-| `MYSQL_TIMEOUT` | 60000 | Connect timeout (ms) |
-| `MYSQL_SSL_CA` / `SSL_CERT` / `SSL_KEY` | — | SSL |
+| Variable                                | Default | Description          |
+| --------------------------------------- | ------- | -------------------- |
+| `MYSQL_MAX_ROWS`                        | 100     | Max rows             |
+| `MYSQL_QUERY_TIMEOUT`                   | 30000   | Query timeout (ms)   |
+| `MYSQL_RETRY_COUNT`                     | 2       | Read retry count     |
+| `MYSQL_RETRY_DELAY_MS`                  | 200     | Retry backoff        |
+| `MYSQL_CONNECTION_LIMIT`                | 10      | Pool size            |
+| `MYSQL_TIMEOUT`                         | 60000   | Connect timeout (ms) |
+| `MYSQL_SSL_CA` / `SSL_CERT` / `SSL_KEY` | —       | SSL                  |
 
 ### Read-only, debug, MCP
 
-| Variable | Description |
-| --- | --- |
-| `MYSQL_READONLY` | `true` read-only |
-| `MCP_DEBUG` | `true` → `executionTime` in tool results |
-| `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | Default 50; `0` names only |
-| `MCP_AUDIT_LOG` | Audit log path |
-| `MCP_QUERY_RESULT_HINT` | `true` → `approxChars` on `query` |
-| `MYSQL_MCP_EXPLAIN_JSON` | `true` → JSON EXPLAIN parsing |
+| Variable                         | Description                              |
+| -------------------------------- | ---------------------------------------- |
+| `MYSQL_READONLY`                 | `true` read-only                         |
+| `MCP_DEBUG`                      | `true` → `executionTime` in tool results |
+| `MCP_SCHEMA_OVERVIEW_MAX_TABLES` | Default 50; `0` names only               |
+| `MCP_AUDIT_LOG`                  | Audit log path                           |
+| `MCP_QUERY_RESULT_HINT`          | `true` → `approxChars` on `query`        |
+| `MYSQL_MCP_EXPLAIN_JSON`         | `true` → JSON EXPLAIN parsing            |
 
 ### Multi-DSN
 
-| Variable | Description |
-| --- | --- |
-| `MYSQL_MCP_EXTRA_CONNECTIONS` | JSON array of `{ id, url }` |
-| `MYSQL_MCP_CONNECTION_ID` | Active id, default `default` |
+| Variable                      | Description                  |
+| ----------------------------- | ---------------------------- |
+| `MYSQL_MCP_EXTRA_CONNECTIONS` | JSON array of `{ id, url }`  |
+| `MYSQL_MCP_CONNECTION_ID`     | Active id, default `default` |
 
 ### Ops (optional)
 
-| Variable | Description |
-| --- | --- |
-| `MYSQL_MCP_OPS_TOOLS` | `true` → `process_list`, `slow_query_status` |
+| Variable                     | Description                                         |
+| ---------------------------- | --------------------------------------------------- |
+| `MYSQL_MCP_OPS_TOOLS`        | `true` → `process_list`, `slow_query_status`        |
 | `MYSQL_MCP_PROCESS_LIST_MAX` | Max rows for `process_list` (default 100, cap 5000) |
-| `MYSQL_MCP_KILL_QUERY` | `true` → `kill_query` |
-| `MYSQL_MCP_READ_AUDIT_TOOL` | + `MCP_AUDIT_LOG` → `read_audit_log` |
-| `MYSQL_MCP_READ_SLOW_LOG` | + `MYSQL_MCP_SLOW_LOG_PATH` → `read_slow_query_log` |
-| `MYSQL_MCP_SLOW_LOG_PATH` | Slow log file path |
+| `MYSQL_MCP_KILL_QUERY`       | `true` → `kill_query`                               |
+| `MYSQL_MCP_READ_AUDIT_TOOL`  | + `MCP_AUDIT_LOG` → `read_audit_log`                |
+| `MYSQL_MCP_READ_SLOW_LOG`    | + `MYSQL_MCP_SLOW_LOG_PATH` → `read_slow_query_log` |
+| `MYSQL_MCP_SLOW_LOG_PATH`    | Slow log file path                                  |
 
 ---
 
@@ -275,10 +275,12 @@ Edit `claude_desktop_config.json` ([macOS] `~/Library/Application Support/Claude
 
 1. **Open this repo as the workspace root** (so `cwd` loads the project root `.env`).
 2. **Global npm install**: `npm install -g @yclenove/mysql-mcp-server@latest` and ensure `mysql-mcp-server` is on `PATH` (Windows: npm global bin).
-3. Put connection settings in **project root** `.env` (gitignored). **Do not** put passwords in `.cursor/mcp.json` `env`; use `"env": {}`.
-4. This repo includes [`.cursor/mcp.json`](./.cursor/mcp.json) with **`mysql-mcp-server`** (no args). Enable the `mysql-mcp` server under **Settings → MCP** or reload the window.
+3. Put connection settings in **project root** `.env` (gitignored). **Do not** put production passwords in MCP `env` if you can rely on `.env`.
+4. This repo **does not commit** `.cursor/`. Add the MCP server in Cursor settings, or create a **local** project-root `.cursor/mcp.json` (not committed) with **`mysql-mcp-server`** (no args). Enable `mysql-mcp` under **Settings → MCP** or reload the window.
 5. **Env precedence (v1.4.2+)**: keys present in project `.env` override same-named variables from the OS, so you do not accidentally connect to `127.0.0.1`.
 6. Full manual test: [MCP_CURSOR_TEST.md](./MCP_CURSOR_TEST.md).
+
+Example (save as local `.cursor/mcp.json`, do not commit):
 
 ```json
 {
@@ -326,8 +328,8 @@ For **local source debugging**, switch to `node` + `${workspaceFolder}/dist/inde
    npm run build
    ```
 
-2. **Option A — `.cursor/mcp.json` (matches npm)**  
-   Defaults to **`mysql-mcp-server`** (global install, see **Cursor** above). Reload MCP; connection still reads project root `.env`.
+2. **Option A — global `mysql-mcp-server`**  
+   After global install, configure **`mysql-mcp-server`** in a self-created local `.cursor/mcp.json` (not committed). Reload MCP; connection still reads project root `.env`.
 
 3. **Option B — debug this repo’s build**  
    Set MCP to **`node` + `${workspaceFolder}/dist/index.js`**, run `npm run build`, reload MCP.
@@ -395,14 +397,14 @@ docker run -e MYSQL_HOST=host.docker.internal \
 
 ## Troubleshooting
 
-| Issue | What to check |
-| --- | --- |
-| Connection failed | MySQL up; host/port/user/password; remote: firewall, `bind-address` |
+| Issue                                                            | What to check                                                                                               |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Connection failed                                                | MySQL up; host/port/user/password; remote: firewall, `bind-address`                                         |
 | Log shows `.env` loaded but `MySQL:` still points to `127.0.0.1` | v1.4.2+: project `.env` overrides system `MYSQL_*`. Upgrade if needed; ensure `MYSQL_HOST` is set in `.env` |
-| Query timeout | Raise `MYSQL_QUERY_TIMEOUT`; large results: `MYSQL_MAX_ROWS` |
-| Writes rejected | Expected if `MYSQL_READONLY=true` |
-| SSL | Set `MYSQL_SSL_*` |
-| Local build not used | Run `npm run build`; workspace root = this repo; `dist/index.js` exists |
+| Query timeout                                                    | Raise `MYSQL_QUERY_TIMEOUT`; large results: `MYSQL_MAX_ROWS`                                                |
+| Writes rejected                                                  | Expected if `MYSQL_READONLY=true`                                                                           |
+| SSL                                                              | Set `MYSQL_SSL_*`                                                                                           |
+| Local build not used                                             | Run `npm run build`; workspace root = this repo; MCP `node` path points to `dist/index.js`                  |
 
 ---
 

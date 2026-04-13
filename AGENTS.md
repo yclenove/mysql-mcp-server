@@ -13,4 +13,4 @@
 - **Prompts**：元数据描述短；正文步骤够用即可，避免与工具描述逐字重复。
 - **新增工具**：先评估能否合并进现有工具，避免 `list_tools` 体积膨胀。
 
-本地开发可在 `.cursor/rules/mcp-token-economy.mdc` 中查看同主题规则（若该目录未纳入 Git，以本文件为准）。
+若本机存在 `.cursor/rules/mcp-token-economy.mdc`，可与本文件对照（该目录默认不纳入 Git，以本文件为准）。
