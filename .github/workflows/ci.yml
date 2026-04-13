@@ -1,9 +1,7 @@
 name: CI
 
-# 官方 Action（checkout/setup-node）默认曾用 Node 20 运行；设为 true 后改用 Node 24，避免弃用告警。
-# 参见 https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+# 使用基于 Node 24 的 Action 主版本，避免「actions 仍 targeting Node 20」类弃用告警：
+# https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
 
 on:
   pull_request:
@@ -15,10 +13,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: 'npm'
