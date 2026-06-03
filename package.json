@@ -36,7 +36,7 @@
   ],
   "author": "yclenove",
   "license": "MIT",
-  "description": "MySQL MCP Server - 通过 MCP 协议操作 MySQL 数据库",
+  "description": "Production-oriented MySQL MCP server for Cursor and Claude — safe queries, multi-DSN, EXPLAIN, audit, and CI-tested",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yclenove/mysql-mcp-server.git"
