@@ -48,7 +48,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "dotenv": "^16.4.7",
-    "mysql2": "^3.21.0",
+    "mysql2": "^3.22.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
